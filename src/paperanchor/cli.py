@@ -32,7 +32,17 @@ def main(argv: list[str] | None = None) -> int:
     ask = commands.add_parser("ask", help="Retrieve passages and generate a cited answer")
     ask.add_argument("question")
     ask.add_argument("--limit", type=int, default=5)
+    serve = commands.add_parser("serve", help="Open the local research workspace")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
+    if args.command == "serve":
+        import uvicorn
+
+        from .web import create_app
+
+        uvicorn.run(create_app(args.db), host=args.host, port=args.port)
+        return 0
     library = PaperLibrary(args.db)
 
     if args.command == "index":

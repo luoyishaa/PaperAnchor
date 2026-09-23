@@ -20,12 +20,34 @@ class IndexResult:
 @dataclass(frozen=True)
 class PassageHit:
     passage_id: int
+    paper_id: int
     paper_path: Path
     paper_title: str
     page_number: int
     text: str
     bbox: tuple[float, float, float, float]
     score: float
+
+
+@dataclass(frozen=True)
+class PaperRecord:
+    id: int
+    file_path: Path
+    title: str
+    page_count: int
+    passage_count: int
+    indexed_at: str
+
+
+@dataclass(frozen=True)
+class Annotation:
+    id: int
+    paper_id: int
+    page_number: int
+    bbox: tuple[float, float, float, float]
+    body: str
+    author: str
+    created_at: str
 
 
 _STOP_WORDS = frozenset(
@@ -70,6 +92,16 @@ class PaperLibrary:
                 );
                 CREATE VIRTUAL TABLE IF NOT EXISTS passage_search
                     USING fts5(text, tokenize='porter unicode61');
+                CREATE TABLE IF NOT EXISTS annotations (
+                    id INTEGER PRIMARY KEY,
+                    paper_id INTEGER NOT NULL REFERENCES papers(id) ON DELETE CASCADE,
+                    page_number INTEGER NOT NULL,
+                    x0 REAL NOT NULL, y0 REAL NOT NULL,
+                    x1 REAL NOT NULL, y1 REAL NOT NULL,
+                    body TEXT NOT NULL,
+                    author TEXT NOT NULL CHECK(author IN ('user', 'agent')),
+                    created_at TEXT NOT NULL
+                );
                 """
             )
         finally:
@@ -81,7 +113,7 @@ class PaperLibrary:
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
 
-    def index_pdf(self, pdf_path: Path) -> IndexResult:
+    def index_pdf(self, pdf_path: Path, *, display_name: str | None = None) -> IndexResult:
         path = pdf_path.resolve(strict=True)
         if path.suffix.lower() != ".pdf":
             raise ValueError(f"Not a PDF: {path}")
@@ -98,9 +130,11 @@ class PaperLibrary:
                 return IndexResult(existing["id"], count, changed=False)
 
             parsed = parse_pdf(path)
+            title = display_name.strip() if display_name and parsed.title == path.stem else parsed.title
             with connection:
                 if existing:
                     paper_id = existing["id"]
+                    connection.execute("DELETE FROM annotations WHERE paper_id = ?", (paper_id,))
                     connection.execute(
                         "DELETE FROM passage_search WHERE rowid IN "
                         "(SELECT id FROM passages WHERE paper_id = ?)",
@@ -111,7 +145,7 @@ class PaperLibrary:
                         "UPDATE papers SET file_hash=?, title=?, page_count=?, indexed_at=? WHERE id=?",
                         (
                             file_hash,
-                            parsed.title,
+                            title,
                             parsed.page_count,
                             datetime.now(timezone.utc).isoformat(),
                             paper_id,
@@ -124,7 +158,7 @@ class PaperLibrary:
                         (
                             str(path),
                             file_hash,
-                            parsed.title,
+                            title,
                             parsed.page_count,
                             datetime.now(timezone.utc).isoformat(),
                         ),
@@ -162,7 +196,7 @@ class PaperLibrary:
         try:
             rows = connection.execute(
                 """
-                SELECT p.id, p.page_number, p.text, p.x0, p.y0, p.x1, p.y1,
+                SELECT p.id, p.paper_id, p.page_number, p.text, p.x0, p.y0, p.x1, p.y1,
                        d.file_path, d.title, bm25(passage_search) AS score
                 FROM passage_search
                 JOIN passages AS p ON p.id = passage_search.rowid
@@ -176,6 +210,7 @@ class PaperLibrary:
             return tuple(
                 PassageHit(
                     passage_id=row["id"],
+                    paper_id=row["paper_id"],
                     paper_path=Path(row["file_path"]),
                     paper_title=row["title"],
                     page_number=row["page_number"],
@@ -183,6 +218,82 @@ class PaperLibrary:
                     bbox=(row["x0"], row["y0"], row["x1"], row["y1"]),
                     score=row["score"],
                 )
+                for row in rows
+            )
+        finally:
+            connection.close()
+
+    def list_papers(self) -> tuple[PaperRecord, ...]:
+        connection = self._connect()
+        try:
+            rows = connection.execute(
+                """SELECT d.*, COUNT(p.id) AS passage_count FROM papers AS d
+                   LEFT JOIN passages AS p ON p.paper_id = d.id
+                   GROUP BY d.id ORDER BY d.indexed_at DESC"""
+            ).fetchall()
+            return tuple(self._paper_from_row(row) for row in rows)
+        finally:
+            connection.close()
+
+    def get_paper(self, paper_id: int) -> PaperRecord | None:
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                """SELECT d.*, COUNT(p.id) AS passage_count FROM papers AS d
+                   LEFT JOIN passages AS p ON p.paper_id = d.id
+                   WHERE d.id = ? GROUP BY d.id""", (paper_id,)
+            ).fetchone()
+            return self._paper_from_row(row) if row else None
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _paper_from_row(row: sqlite3.Row) -> PaperRecord:
+        return PaperRecord(row["id"], Path(row["file_path"]), row["title"],
+                           row["page_count"], row["passage_count"], row["indexed_at"])
+
+    def add_annotation(self, paper_id: int, page_number: int,
+                       bbox: tuple[float, float, float, float], body: str,
+                       author: str = "user") -> Annotation:
+        paper = self.get_paper(paper_id)
+        if paper is None:
+            raise ValueError("Paper not found")
+        if not 1 <= page_number <= paper.page_count:
+            raise ValueError("Page out of range")
+        if author not in ("user", "agent"):
+            raise ValueError("Unknown annotation author")
+        if not body.strip():
+            raise ValueError("Annotation cannot be empty")
+        x0, y0, x1, y1 = bbox
+        if bbox != (0, 0, 0, 0) and not (0 <= x0 < x1 and 0 <= y0 < y1):
+            raise ValueError("Invalid annotation rectangle")
+        now = datetime.now(timezone.utc).isoformat()
+        connection = self._connect()
+        try:
+            with connection:
+                cursor = connection.execute(
+                    """INSERT INTO annotations
+                       (paper_id, page_number, x0, y0, x1, y1, body, author, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (paper_id, page_number, *bbox, body.strip(), author, now),
+                )
+                annotation_id = cursor.lastrowid
+            return Annotation(annotation_id, paper_id, page_number, bbox,
+                              body.strip(), author, now)
+        finally:
+            connection.close()
+
+    def list_annotations(self, paper_id: int, page_number: int) -> tuple[Annotation, ...]:
+        connection = self._connect()
+        try:
+            rows = connection.execute(
+                "SELECT * FROM annotations WHERE paper_id=? AND page_number=? ORDER BY id",
+                (paper_id, page_number),
+            ).fetchall()
+            return tuple(
+                Annotation(row["id"], row["paper_id"], row["page_number"],
+                           (row["x0"], row["y0"], row["x1"], row["y1"]),
+                           row["body"], row["author"], row["created_at"])
                 for row in rows
             )
         finally:

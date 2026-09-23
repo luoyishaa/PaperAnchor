@@ -12,16 +12,22 @@ dependencies = [
   "openai>=1.84,<2",
   "anthropic>=1,<2",
   "python-dotenv>=1,<2",
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.30,<1",
+  "python-multipart>=0.0.9,<1",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10"]
+dev = ["pytest>=8,<10", "httpx>=0.27,<1"]
 
 [project.scripts]
 paperanchor = "paperanchor.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+paperanchor = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaperAnchor</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div><strong>PaperAnchor</strong><span>Read the evidence.</span></div>
+    <label class="upload">Add PDF<input id="upload" type="file" accept="application/pdf,.pdf" hidden></label>
+  </header>
+  <main>
+    <aside class="library-pane">
+      <h2>Library</h2>
+      <p class="muted">Your local research papers</p>
+      <div id="papers"></div>
+    </aside>
+    <section class="research-pane">
+      <div class="research-head">
+        <h1>Ask your papers</h1>
+        <p>Answers connect back to the exact place in a PDF.</p>
+      </div>
+      <form id="ask-form">
+        <textarea id="question" required placeholder="What do these papers say about…?"></textarea>
+        <button type="submit">Ask</button>
+      </form>
+      <div id="status" role="status"></div>
+      <article id="answer" hidden></article>
+      <h2>Evidence</h2>
+      <div id="evidence"></div>
+    </section>
+    <section class="reader-pane">
+      <div class="reader-bar">
+        <div><strong id="reader-title">Select a paper</strong><span id="reader-count"></span></div>
+        <div class="page-controls">
+          <button id="previous" type="button" aria-label="Previous page">‹</button>
+          <span id="page-label">–</span>
+          <button id="next" type="button" aria-label="Next page">›</button>
+          <a id="open-pdf" target="_blank" rel="noopener" hidden>PDF ↗</a>
+        </div>
+      </div>
+      <div id="reader-scroll">
+        <div id="empty-reader">Choose a paper or select evidence to inspect its source.</div>
+        <div id="page-wrap" hidden>
+          <img id="page-image" alt="Rendered PDF page">
+          <div id="overlay"></div>
+        </div>
+      </div>
+      <div class="notes-panel">
+        <h2>Notes <span id="note-count"></span></h2>
+        <div id="notes"></div>
+        <form id="note-form">
+          <textarea id="note-body" placeholder="Add a note to this page…" required></textarea>
+          <button type="submit">Save note</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

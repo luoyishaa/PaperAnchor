@@ -15,6 +15,7 @@ Generate = Callable[[str, str], str]
 class Evidence:
     evidence_id: str
     passage_id: int
+    paper_id: int
     paper_path: Path
     paper_title: str
     page_number: int
@@ -56,6 +57,7 @@ def answer_question(
         Evidence(
             evidence_id=f"E{index}",
             passage_id=hit.passage_id,
+            paper_id=hit.paper_id,
             paper_path=hit.paper_path,
             paper_title=hit.paper_title,
             page_number=hit.page_number,

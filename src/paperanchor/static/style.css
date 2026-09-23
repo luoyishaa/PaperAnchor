@@ -1,0 +1,53 @@
+:root { font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif; color: #202b2b; background: #f4f5f1; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #193d39; color: white; }
+header strong { font-size: 19px; letter-spacing: -.03em; }
+header span { margin-left: 15px; opacity: .7; font-size: 13px; }
+button, .upload { border: 0; border-radius: 7px; background: #cbe7b4; color: #193d39; cursor: pointer; font: inherit; font-weight: 650; padding: 10px 14px; }
+button:hover, .upload:hover { background: #b4d99a; }
+button:disabled { opacity: .4; cursor: default; }
+main { height: calc(100vh - 64px); display: grid; grid-template-columns: minmax(190px, 20%) minmax(340px, 31%) minmax(400px, 49%); }
+main > * { min-width: 0; overflow: auto; }
+.library-pane, .research-pane { border-right: 1px solid #dce1d9; padding: 24px; }
+h1, h2, p { margin-top: 0; }
+h1 { font-size: 27px; letter-spacing: -.04em; margin-bottom: 7px; }
+h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .09em; color: #55716a; }
+.muted, .research-head p { color: #6b7771; font-size: 13px; }
+.paper, .evidence-card, .note { background: white; border: 1px solid #e0e5dd; border-radius: 9px; padding: 13px; margin: 10px 0; }
+.paper { cursor: pointer; overflow-wrap: anywhere; }
+.paper.active, .evidence-card.active { border-color: #3d826d; box-shadow: 0 0 0 1px #3d826d; }
+.paper strong { display: block; font-size: 14px; line-height: 1.35; }
+.paper small, .evidence-card small { color: #718079; display: block; margin-top: 7px; }
+textarea { width: 100%; resize: vertical; min-height: 96px; padding: 12px; border: 1px solid #cbd5cc; border-radius: 7px; background: white; font: inherit; }
+#ask-form button { margin-top: 8px; }
+#status { min-height: 31px; padding-top: 10px; font-size: 13px; color: #66756d; }
+#answer { background: #e9f3e5; border-left: 3px solid #448b72; padding: 18px; border-radius: 3px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 25px; }
+#answer .citation { display: inline; border: 0; background: transparent; color: #176e61; text-decoration: underline; padding: 0 2px; font-size: inherit; }
+.evidence-card { cursor: pointer; line-height: 1.45; }
+.evidence-card p { font-size: 13px; margin: 8px 0 0; color: #425049; max-height: 108px; overflow: hidden; }
+.reader-pane { display: flex; flex-direction: column; background: #e6e9e3; }
+.reader-bar { min-height: 64px; padding: 10px 18px; background: white; border-bottom: 1px solid #dce1d9; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.reader-bar strong { font-size: 14px; display: block; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-bar span { font-size: 12px; color: #718079; }
+.page-controls { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.page-controls button { padding: 4px 10px; }
+.page-controls a { font-size: 12px; color: #176e61; }
+#reader-scroll { flex: 1; overflow: auto; padding: 28px; text-align: center; }
+#empty-reader { margin: 25vh auto; max-width: 240px; color: #76827b; line-height: 1.5; }
+#page-wrap { position: relative; width: min(100%, 820px); margin: auto; box-shadow: 0 4px 22px #233a3428; }
+#page-image { width: 100%; display: block; background: white; }
+#overlay { position: absolute; inset: 0; pointer-events: none; }
+.highlight { position: absolute; z-index: 2; background: #ffe35477; border: 2px solid #e9ac25; border-radius: 2px; }
+.highlight.note-highlight { z-index: 1; background: #80c7ed44; border-color: #358ab1; }
+.notes-panel { padding: 15px 20px; max-height: 230px; overflow: auto; background: white; border-top: 1px solid #dce1d9; }
+.notes-panel h2 { margin-bottom: 8px; }
+.note { margin: 7px 0; padding: 8px 10px; font-size: 12px; }
+.note.agent { border-left: 3px solid #d6a135; }
+.note.user { border-left: 3px solid #358ab1; }
+.note b { text-transform: capitalize; color: #60756d; margin-right: 8px; }
+#note-form { display: flex; gap: 8px; }
+#note-form textarea { min-height: 40px; height: 40px; }
+#note-form button { white-space: nowrap; }
+@media (max-width: 1050px) { main { grid-template-columns: 210px minmax(300px, 1fr); height: auto; } .reader-pane { grid-column: 1 / -1; min-height: 680px; } }
+@media (max-width: 640px) { main { display: block; } .library-pane { max-height: 230px; } .research-pane { min-height: 450px; } .reader-pane { min-height: 600px; } header span { display: none; } }

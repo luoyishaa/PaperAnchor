@@ -1,33 +1,40 @@
-"""One configurable Chat Completions adapter; no provider details enter RAG code."""
+"""Provider adapters for generating one answer from the supplied evidence."""
 
-import os
-
+from anthropic import Anthropic
 from openai import OpenAI
 
-
-class ModelConfigError(ValueError):
-    pass
+from .model_config import ModelConfigError, load_model_config
 
 
 def generate_with_config(system_prompt: str, user_prompt: str) -> str:
-    base_url = os.getenv("PAPERANCHOR_BASE_URL")
-    api_key = os.getenv("PAPERANCHOR_API_KEY")
-    model = os.getenv("PAPERANCHOR_MODEL")
-    if not all((base_url, api_key, model)):
-        raise ModelConfigError(
-            "Set PAPERANCHOR_BASE_URL, PAPERANCHOR_API_KEY and PAPERANCHOR_MODEL "
-            "for a Chat Completions-compatible provider. See README.md."
+    config = load_model_config()
+    if config.transport == "anthropic":
+        client = Anthropic(api_key=config.api_key, timeout=60.0, max_retries=1)
+        response = client.messages.create(
+            model=config.model,
+            max_tokens=4096,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
         )
+        content = "".join(
+            block.text for block in response.content if block.type == "text"
+        )
+    else:
+        client = OpenAI(
+            base_url=config.base_url,
+            api_key=config.api_key,
+            timeout=60.0,
+            max_retries=1,
+        )
+        response = client.chat.completions.create(
+            model=config.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        content = response.choices[0].message.content or ""
 
-    client = OpenAI(base_url=base_url, api_key=api_key, timeout=60.0, max_retries=1)
-    completion = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    content = completion.choices[0].message.content
-    if not content:
+    if not content.strip():
         raise RuntimeError("The model returned an empty answer")
     return content

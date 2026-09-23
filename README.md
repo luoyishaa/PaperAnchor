@@ -24,7 +24,7 @@ The PDF parser, library, answer workflow, model adapter, and CLI are separate mo
 
 - Python 3.11+
 - Text-based PDFs (scanned pages without a text layer are not supported)
-- A Chat Completions-compatible API for `ask`; `index` and `search` work offline
+- A supported provider API key for `ask`; `index` and `search` work offline
 
 ## Install and run
 
@@ -41,16 +41,31 @@ On macOS or Linux, activate the virtual environment and run `pip install -e '.[d
 
 `data/` is a local input directory and is ignored by Git. Supply your own PDFs there, or pass an individual PDF path to `index`. The default index is `.paperanchor/library.sqlite3`; use `--db PATH` before the subcommand to choose another location.
 
-For generated answers, set the endpoint, model ID, and API key in your local environment:
+For generated answers, create a local configuration file and fill in the key for the selected provider:
 
 ```powershell
-$env:PAPERANCHOR_BASE_URL = 'https://your-provider.example/v1'
-$env:PAPERANCHOR_API_KEY = 'your-key'
-$env:PAPERANCHOR_MODEL = 'your-model-id'
+Copy-Item .env.example .env
+# Edit .env and fill DEEPSEEK_API_KEY for the default provider.
 .\.venv\Scripts\paperanchor.exe ask "What problem does retrieval-augmented generation address?"
 ```
 
-Use the values documented by your provider. `.env` and the local index are ignored by Git. The application reads environment variables; it does not load `.env` automatically.
+To change providers, set `PAPERANCHOR_PROVIDER` in `.env` and fill its matching key. `PAPERANCHOR_MODEL_TIER=fast` is the default; set it to `pro` for the higher-capability preset. `PAPERANCHOR_MODEL_ID` optionally selects an exact model ID. Process environment variables take precedence over `.env`.
+
+| Provider | Key variable | `fast` | `pro` |
+| --- | --- | --- | --- |
+| DeepSeek | `DEEPSEEK_API_KEY` | `deepseek-flash` | `deepseek-v4-pro` |
+| GLM | `ZHIPU_API_KEY` | `glm-5.3-flash` | `glm-5.3` |
+| Qwen | `DASHSCOPE_API_KEY` | `qwen3.8-flash` | `qwen3.8-max` |
+| Kimi | `MOONSHOT_API_KEY` | `kimi-k2.6` | `kimi-k3` |
+| OpenAI | `OPENAI_API_KEY` | `gpt-6-luna` | `gpt-6-sol` |
+| Gemini | `GEMINI_API_KEY` | `gemini-3.8-flash` | `gemini-3.1-pro-preview` |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-haiku-4-5` | `claude-opus-5-5` |
+
+These presets call each provider directly. Qwen uses the China (Beijing) endpoint, so its key must belong to that region. DeepSeek currently routes `deepseek-v4-pro` to Flash pending its next Pro release; selecting `pro` does not currently provide a distinct Pro model. Provider model IDs and availability change, so check the linked official docs before relying on a preset long term.
+
+### Local keys and GitHub
+
+`.env.example` contains empty key fields and is committed. Your filled `.env` stays on your computer because `.gitignore` excludes it. GitHub does not read your local environment variables or `.env` when you push code. CI runs tests with model stubs and needs no provider key. If a key is ever committed or pasted into a public issue or log, revoke it and create a new one; adding `.gitignore` afterward does not erase Git history.
 
 ## Verify
 
@@ -68,4 +83,10 @@ This implementation uses English-term keyword retrieval and PDF text blocks. It 
 
 - [PyMuPDF text extraction](https://pymupdf.readthedocs.io/en/latest/recipes-text.html)
 - [SQLite FTS5 and BM25](https://www.sqlite.org/fts5.html)
-- [OpenAI Python SDK](https://github.com/openai/openai-python)
+- [DeepSeek models](https://api-docs.deepseek.com/quick_start/pricing/)
+- [GLM model overview](https://docs.bigmodel.cn/cn/guide/start/model-overview)
+- [Qwen model list](https://help.aliyun.com/zh/model-studio/text-generation-model)
+- [Kimi API overview](https://platform.kimi.com/docs/api/overview)
+- [OpenAI models](https://developers.openai.com/api/docs/models)
+- [Gemini models](https://ai.google.dev/gemini-api/docs/models)
+- [Claude models](https://platform.claude.com/docs/en/models/overview)

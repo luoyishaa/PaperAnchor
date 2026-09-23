@@ -7,7 +7,8 @@ PaperAnchor separates PDF extraction, storage and retrieval, answer construction
 | `pdf.py` | Extract text blocks with one-based PDF page numbers and bounding boxes. |
 | `library.py` | Persist PDF records and passages; maintain the FTS5 index; return ranked hits. |
 | `rag.py` | Turn hits into numbered evidence, request an answer, and validate cited IDs. |
-| `llm.py` | Call a configured Chat Completions-compatible model. |
+| `model_config.py` | Resolve provider presets and the selected local credential. |
+| `llm.py` | Call an official provider through Chat Completions or native Claude Messages. |
 | `cli.py` | Expose indexing, retrieval inspection, and answering as commands. |
 
 ## Data flow and invariants
@@ -17,7 +18,7 @@ PaperAnchor separates PDF extraction, storage and retrieval, answer construction
 3. `search` ranks matching passages with SQLite FTS5 BM25 and returns their source locations. The current query parser extracts English alphanumeric terms and quotes them before constructing an FTS expression.
 4. `answer_question` labels hits `E1`, `E2`, etc. The generator receives only these passages as evidence. The returned answer is marked `answered`, `uncited`, or `invalid_citation` according to its evidence IDs. When retrieval finds nothing, the generator is not called.
 
-The current database stores one PDF file per paper record. A later implementation of paper versions or alternate files will require separate paper and file identities. The model client is injected into the answer workflow, allowing deterministic tests without network access.
+The current database stores one PDF file per paper record. A later implementation of paper versions or alternate files will require separate paper and file identities. The model generator is injected into the answer workflow, allowing deterministic tests without network access. Provider selection and credential lookup remain behind that generator interface.
 
 ## Known boundaries
 

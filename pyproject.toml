@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paperanchor"
+version = "0.1.0"
+description = "Evidence-grounded question answering over research PDFs"
+requires-python = ">=3.11"
+dependencies = [
+  "PyMuPDF>=1.24,<2",
+  "openai>=1.84,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+paperanchor = "paperanchor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

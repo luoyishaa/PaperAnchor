@@ -65,13 +65,17 @@ class ModelConfig:
     transport: Literal["openai", "anthropic"]
 
 
+def get_setting(name: str, env_file: Path | None = None) -> str:
+    """Read a local setting with process environment taking precedence."""
+    values = dotenv_values(env_file or Path.cwd() / ".env")
+    value = os.environ[name] if name in os.environ else values.get(name)
+    return (value or "").strip()
+
+
 def load_model_config(env_file: Path | None = None) -> ModelConfig:
     """Read `.env` in the current directory, with process variables taking precedence."""
-    values = dotenv_values(env_file or Path.cwd() / ".env")
-
     def setting(name: str) -> str:
-        value = os.environ[name] if name in os.environ else values.get(name)
-        return (value or "").strip()
+        return get_setting(name, env_file)
 
     provider_name = setting("PAPERANCHOR_PROVIDER").lower() or "deepseek"
     preset = PROVIDERS.get(provider_name)

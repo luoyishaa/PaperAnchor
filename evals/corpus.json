@@ -1,0 +1,11 @@
+{
+  "name": "paperanchor-six-paper-v1",
+  "papers": [
+    {"file": "1706.03762v7.pdf", "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697", "source": "https://arxiv.org/abs/1706.03762"},
+    {"file": "2004.12832v2.pdf", "sha256": "2e487d9b96e3c2e5e286d843e98a066adc0442faa3a6e8ddbd1771221bf9ae14", "source": "https://arxiv.org/abs/2004.12832"},
+    {"file": "2005.11401v4.pdf", "sha256": "23e3249e9a1e75418d82efecab0ea8c4d033b89c93742f63208d47ce01f21233", "source": "https://arxiv.org/abs/2005.11401"},
+    {"file": "2310.11511v1.pdf", "sha256": "d9eaa1398abac0df67a9d0933a5bf8b6d9d83d2e72da2a486073cd842dd52978", "source": "https://arxiv.org/abs/2310.11511"},
+    {"file": "2312.10997v5.pdf", "sha256": "396a0fadeb4cd40f5c8ccc36b73a0815f6cb4d7f6bfa53b6c48c1f9aba7c7e02", "source": "https://arxiv.org/abs/2312.10997"},
+    {"file": "2404.16130v2.pdf", "sha256": "730f1a9f38d16689900969a3eeeb1b31e45eda1dcc1f37a043afa90aff76c867", "source": "https://arxiv.org/abs/2404.16130"}
+  ]
+}

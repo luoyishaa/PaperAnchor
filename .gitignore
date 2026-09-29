@@ -9,3 +9,11 @@ __pycache__/
 .env.*
 !.env.example
 data/
+.study/
+# Private discussion document and its Word lock file.
+/docs/交流文档.docx
+/docs/~$交流文档.docx
+frontend/node_modules/
+frontend/dist/
+build/
+dist/

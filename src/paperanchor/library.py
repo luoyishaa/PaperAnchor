@@ -111,6 +111,7 @@ class PaperLibrary:
         connection = sqlite3.connect(self.database_path)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA busy_timeout = 5000")
         return connection
 
     def index_pdf(self, pdf_path: Path, *, display_name: str | None = None) -> IndexResult:
@@ -121,9 +122,16 @@ class PaperLibrary:
         connection = self._connect()
         try:
             existing = connection.execute(
-                "SELECT id, file_hash FROM papers WHERE file_path = ?", (str(path),)
+                "SELECT id, file_hash, title FROM papers WHERE file_path = ?", (str(path),)
             ).fetchone()
             if existing and existing["file_hash"] == file_hash:
+                if (existing["title"] == path.stem
+                        and re.fullmatch(r"\d{4}\.\d{4,5}(?:v\d+)?", path.stem)):
+                    better_title = parse_pdf(path).title
+                    if better_title != path.stem:
+                        with connection:
+                            connection.execute("UPDATE papers SET title=? WHERE id=?",
+                                               (better_title, existing["id"]))
                 count = connection.execute(
                     "SELECT COUNT(*) FROM passages WHERE paper_id = ?", (existing["id"],)
                 ).fetchone()[0]
@@ -186,7 +194,8 @@ class PaperLibrary:
         finally:
             connection.close()
 
-    def search(self, question: str, limit: int = 5) -> tuple[PassageHit, ...]:
+    def search(self, question: str, limit: int = 5, *,
+               space_id: int | None = None) -> tuple[PassageHit, ...]:
         if limit < 1:
             raise ValueError("limit must be at least 1")
         expression = _search_expression(question)
@@ -194,18 +203,24 @@ class PaperLibrary:
             return ()
         connection = self._connect()
         try:
+            membership = (
+                "JOIN space_papers AS sp ON sp.paper_id = d.id AND sp.space_id = ?"
+                if space_id is not None else ""
+            )
             rows = connection.execute(
-                """
+                f"""
                 SELECT p.id, p.paper_id, p.page_number, p.text, p.x0, p.y0, p.x1, p.y1,
                        d.file_path, d.title, bm25(passage_search) AS score
                 FROM passage_search
                 JOIN passages AS p ON p.id = passage_search.rowid
                 JOIN papers AS d ON d.id = p.paper_id
+                {membership}
                 WHERE passage_search MATCH ?
                 ORDER BY score
                 LIMIT ?
                 """,
-                (expression, limit),
+                ((space_id, expression, limit) if space_id is not None
+                 else (expression, limit)),
             ).fetchall()
             return tuple(
                 PassageHit(
@@ -223,13 +238,19 @@ class PaperLibrary:
         finally:
             connection.close()
 
-    def list_papers(self) -> tuple[PaperRecord, ...]:
+    def list_papers(self, *, space_id: int | None = None) -> tuple[PaperRecord, ...]:
         connection = self._connect()
         try:
+            membership = (
+                "JOIN space_papers AS sp ON sp.paper_id = d.id AND sp.space_id = ?"
+                if space_id is not None else ""
+            )
             rows = connection.execute(
-                """SELECT d.*, COUNT(p.id) AS passage_count FROM papers AS d
+                f"""SELECT d.*, COUNT(p.id) AS passage_count FROM papers AS d
+                   {membership}
                    LEFT JOIN passages AS p ON p.paper_id = d.id
-                   GROUP BY d.id ORDER BY d.indexed_at DESC"""
+                   GROUP BY d.id ORDER BY d.indexed_at DESC""",
+                (space_id,) if space_id is not None else (),
             ).fetchall()
             return tuple(self._paper_from_row(row) for row in rows)
         finally:

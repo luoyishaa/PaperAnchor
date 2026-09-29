@@ -1,34 +1,35 @@
 # PaperAnchor
 
-PaperAnchor is a local research PDF workspace. It extracts page-located passages, indexes them for full-text search, and supplies retrieved evidence to a configurable language model. Answers carry evidence IDs that open the corresponding PDF page with a highlighted source block.
+PaperAnchor is a local research workspace for finding papers, building a PDF library, and asking questions against checkable evidence. Answers link to a highlighted source block in the original PDF. The project is designed for one researcher on one computer.
 
 ## Capabilities
 
-- Index one PDF or a directory of PDFs. Re-indexing an unchanged file is a no-op.
-- Search indexed passages with SQLite FTS5 and BM25 ranking, without a model account.
-- Generate answers through a Chat Completions-compatible API using retrieved passages.
-- Check that generated evidence IDs refer to passages supplied to the model.
-- Store the PDF page number and text-block rectangle for each passage.
-- Upload and read PDFs in a local web workspace. Click an answer citation to open and highlight its source block.
-- Add page notes or notes attached to evidence. Referenced passages receive a separate agent note.
+- Create research spaces, reuse papers between spaces, and scope questions to one space.
+- Search arXiv or Semantic Scholar for candidate papers. Review the date, abstract, venue, and citation count when available. Import arXiv-hosted PDFs, or upload local PDFs.
+- Extract source blocks with PDF page coordinates. Index in SQLite FTS5 and a local multilingual vector index. Semantic indexing runs as a durable background job.
+- Retrieve with BM25 and vector search, then fuse rankings. Optional BGE cross-encoder reranking is available when enabled.
+- Check evidence sufficiency, try one revised search query when needed, and distinguish paper-based answers from optional model-knowledge answers.
+- Click answer citations to open and highlight the source PDF page. Keep user and assistant notes visually distinct.
 
 ## Architecture
 
 ```text
-PDF → text blocks with page coordinates → SQLite passages + FTS5 index
-                                              ↓
-Question → BM25 retrieval → numbered evidence → model → cited answer
-                                                  ↓
-                                    PDF page + block highlight
+PDF → page-located blocks → SQLite FTS5 + local vectors
+                            ↓
+Question → hybrid search → evidence check → answer + validated citation
+                                               ↓
+                                    PDF page + highlighted block
 ```
 
-The PDF parser, library, answer workflow, model adapter, and CLI are separate modules. See [Architecture](docs/architecture.md) for their responsibilities and data contracts.
+The browser interface is React and TypeScript; the Python API also supports a command-line path. CLI `ask` uses the same hybrid retrieval and evidence-checking workflow as the browser. See [Architecture](docs/architecture.md) for module boundaries and data contracts.
 
 ## Requirements
 
 - Python 3.11+
 - Text-based PDFs (scanned pages without a text layer are not supported)
-- A supported provider API key for `ask`; `index` and `search` work offline
+- Node.js 20.19+ or 22.12+ only if you change and rebuild the frontend
+- A supported model provider API key for answers; importing, reading, and searching do not require one
+- Internet access for the first local embedding-model download and online paper discovery
 
 ## Install and run
 
@@ -36,13 +37,26 @@ From the repository root:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e '.[dev]'
-.\.venv\Scripts\paperanchor.exe index data
-.\.venv\Scripts\paperanchor.exe search "retrieval augmented generation"
+.\.venv\Scripts\python.exe -m pip install .
 .\.venv\Scripts\paperanchor.exe serve
 ```
 
-Open http://127.0.0.1:8000 after starting `serve`. You can upload a PDF there, inspect the library, ask a question, click a citation, move between pages, and add notes. The local server listens only on your computer by default. On macOS or Linux, activate the virtual environment and run `pip install -e '.[dev]'`, then use `paperanchor` in place of `.\.venv\Scripts\paperanchor.exe`.
+Open http://127.0.0.1:8000 after starting `serve`. You can upload a PDF there, inspect the library, ask a question, click a citation, move between pages, and add notes. The local server listens only on your computer by default. On macOS or Linux, activate the virtual environment and run `pip install .`, then use `paperanchor` in place of `.\.venv\Scripts\paperanchor.exe`.
+
+For a directory of existing PDFs, run `paperanchor index data` before starting the server. `paperanchor search "retrieval augmented generation"` is a BM25-only inspection command that works before semantic indexing. `paperanchor ask "..."` runs the browser's answer workflow over **All papers**, using vectors once they have been indexed. The browser builds missing embeddings in the background and shows progress; CLI `index` itself only indexes PDF text.
+
+The first semantic indexing job downloads a multilingual embedding model (about 220 MB). Existing BM25 search remains available while it builds. Semantic Scholar may rate-limit requests without its optional API key; arXiv search works without a key. Only candidates with an arXiv ID can currently be imported directly; open other records and upload their PDF manually.
+
+To edit the frontend:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+# Before packaging: npm run build
+```
+
+The Vite development server proxies `/api` to the Python server. The production build is served from the Python package.
 
 `data/` is a local input directory and is ignored by Git. Supply your own PDFs there, or pass an individual PDF path to `index`. The default index is `.paperanchor/library.sqlite3`; use `--db PATH` before the subcommand to choose another location.
 
@@ -55,6 +69,8 @@ Copy-Item .env.example .env
 ```
 
 To change providers, set `PAPERANCHOR_PROVIDER` in `.env` and fill its matching key. `PAPERANCHOR_MODEL_TIER=fast` is the default; set it to `pro` for the higher-capability preset. `PAPERANCHOR_MODEL_ID` optionally selects an exact model ID. Process environment variables take precedence over `.env`.
+
+`SEMANTIC_SCHOLAR_API_KEY` is optional. `PAPERANCHOR_RERANK_MODEL=BAAI/bge-reranker-base` enables local cross-encoder reranking; this downloads roughly 1 GB of weights on first use and increases query latency. It is off by default until you evaluate its value on your own papers.
 
 | Provider | Key variable | `fast` | `pro` |
 | --- | --- | --- | --- |
@@ -75,19 +91,27 @@ These presets call each provider directly. Qwen uses the China (Beijing) endpoin
 ## Verify
 
 ```powershell
+.\.venv\Scripts\python.exe -m pip install -e '.[dev]'
 .\.venv\Scripts\python.exe -m pytest
 ```
 
 Tests cover PDF indexing, repeated and changed-file indexing, retrieval, cited answers, missing or invalid evidence, and the web flow from upload through source location and notes. They use generated PDFs and a model stub; a live model call requires provider credentials.
 
+The [evidence retrieval benchmark](evals/README.md) pins six public PDFs by checksum and contains source-located questions, including Chinese queries, multi-paper evidence, and no-answer cases. It reports complete evidence-group recall separately for BM25, semantic search, and hybrid retrieval. The local corpus and detailed result files remain outside Git.
+
+The frontend also has `npm run lint` and `npm run build` checks. CI rebuilds the committed frontend bundle and checks that the wheel contains it. See [Evaluation](docs/evaluation.md) for measured results and their limits. A retrieval comparison should use a source-labeled question/evidence set from the papers you actually research, rather than assuming a model name guarantees quality.
+
 ## Current scope
 
-This implementation uses English-term keyword retrieval and PDF text blocks. It does not yet provide semantic search, reranking, OCR, paper discovery, or multi-user research spaces. A citation highlights the source block, which may contain several sentences; it does not isolate the exact supporting sentence. Citation validation checks evidence IDs, not whether every factual claim is actually supported. Bibliographies and short blocks can rank above explanatory text; improving retrieval quality requires a measured evaluation set. The web workspace is designed for one person on a trusted local computer and has no login.
+The PDF parser reads selectable text. It does not interpret scanned pages, equations, figures, or tables as a multimodal model would. A citation highlights a source block, which can contain several sentences; citation validation checks the ID, not factual entailment. The six-paper benchmark measures evidence coverage in that narrow corpus; it does not establish general answer accuracy. Local vector search scans stored vectors exactly and is intended for a small personal collection. The workspace has no login or multi-user isolation. Online discovery returns source-ranked candidates and does not claim to judge paper quality automatically.
 
 ## References
 
 - [PyMuPDF text extraction](https://pymupdf.readthedocs.io/en/latest/recipes-text.html)
 - [SQLite FTS5 and BM25](https://www.sqlite.org/fts5.html)
+- [arXiv API](https://info.arxiv.org/help/api/user-manual.html)
+- [Semantic Scholar Academic Graph API](https://api.semanticscholar.org/api-docs/)
+- [FastEmbed supported models](https://qdrant.github.io/fastembed/examples/Supported_Models/)
 - [DeepSeek models](https://api-docs.deepseek.com/quick_start/pricing/)
 - [GLM model overview](https://docs.bigmodel.cn/cn/guide/start/model-overview)
 - [Qwen model list](https://help.aliyun.com/zh/model-studio/text-generation-model)

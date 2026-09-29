@@ -6,7 +6,10 @@ import sys
 
 from .library import PaperLibrary
 from .llm import ModelConfigError, generate_with_config
-from .rag import answer_question
+from .model_config import get_setting
+from .agent import research_question
+from .semantic import FastEmbedProvider, SemanticIndex, build_retriever
+from .spaces import ALL_PAPERS_SPACE_ID, SpaceStore
 
 
 def _pdf_files(path: Path) -> list[Path]:
@@ -15,6 +18,13 @@ def _pdf_files(path: Path) -> list[Path]:
     if path.is_dir():
         return sorted(file for file in path.rglob("*") if file.suffix.lower() == ".pdf")
     raise ValueError(f"Provide a PDF or a directory containing PDFs: {path}")
+
+
+def _result_limit(value: str) -> int:
+    limit = int(value)
+    if not 1 <= limit <= 20:
+        raise argparse.ArgumentTypeError("limit must be between 1 and 20")
+    return limit
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -26,16 +36,18 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     index = commands.add_parser("index", help="Extract and index a PDF or directory")
     index.add_argument("path", type=Path)
-    search = commands.add_parser("search", help="Inspect retrieved passages without an LLM")
+    search = commands.add_parser("search", help="Inspect BM25 passages without an LLM")
     search.add_argument("question")
-    search.add_argument("--limit", type=int, default=5)
+    search.add_argument("--limit", type=_result_limit, default=5)
     ask = commands.add_parser("ask", help="Retrieve passages and generate a cited answer")
     ask.add_argument("question")
-    ask.add_argument("--limit", type=int, default=5)
+    ask.add_argument("--limit", type=_result_limit, default=5)
     serve = commands.add_parser("serve", help="Open the local research workspace")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
+    if args.command in ("search", "ask") and not args.question.strip():
+        parser.error("question must not be empty")
     if args.command == "serve":
         import uvicorn
 
@@ -73,13 +85,24 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        answer = answer_question(
-            library, args.question, generate_with_config, limit=args.limit
+        SpaceStore(args.db)
+        provider = FastEmbedProvider(cache_dir=args.db.parent / "models")
+        retriever = build_retriever(
+            library, SemanticIndex(args.db), provider,
+            rerank_model=get_setting("PAPERANCHOR_RERANK_MODEL"),
+            cache_dir=args.db.parent / "models",
+        )
+        result = research_question(
+            retriever, args.question, generate_with_config,
+            limit=args.limit, space_id=ALL_PAPERS_SPACE_ID,
         )
     except ModelConfigError as error:
         print(error)
         return 2
-    print(f"Status: {answer.status}\n\n{answer.text}")
+    answer = result.answer
+    print(f"Status: {answer.status} | Basis: {result.basis}\n\n{answer.text}")
+    if result.follow_up_question:
+        print(f"\nFollow-up: {result.follow_up_question}")
     if answer.evidence:
         print("\nRetrieved evidence:")
         for item in answer.evidence:

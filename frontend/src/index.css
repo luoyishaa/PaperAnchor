@@ -1,0 +1,13 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif;
+  color: #202b2b;
+  background: #f4f5f1;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }

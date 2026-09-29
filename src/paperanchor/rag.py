@@ -3,12 +3,17 @@
 from dataclasses import dataclass
 from pathlib import Path
 import re
-from typing import Callable, Literal
+from typing import Callable, Literal, Protocol
 
-from .library import PaperLibrary
+from .library import PassageHit
 
 
 Generate = Callable[[str, str], str]
+
+
+class PassageRetriever(Protocol):
+    def search(self, question: str, limit: int = 5, *,
+               space_id: int | None = None) -> tuple[PassageHit, ...]: ...
 
 
 @dataclass(frozen=True)
@@ -25,7 +30,8 @@ class Evidence:
 
 @dataclass(frozen=True)
 class Answer:
-    status: Literal["answered", "no_evidence", "uncited", "invalid_citation"]
+    status: Literal["answered", "no_evidence", "uncited", "invalid_citation",
+                    "insufficient_evidence", "general_knowledge"]
     text: str
     evidence: tuple[Evidence, ...]
     cited_evidence_ids: tuple[str, ...]
@@ -37,23 +43,8 @@ Use only the listed evidence IDs. If the evidence is insufficient, explain what 
 Do not present background model knowledge as a finding from these papers."""
 
 
-def answer_question(
-    library: PaperLibrary,
-    question: str,
-    generate: Generate,
-    *,
-    limit: int = 5,
-) -> Answer:
-    hits = library.search(question, limit=limit)
-    if not hits:
-        return Answer(
-            status="no_evidence",
-            text="No matching paper evidence was found. Try English technical terms or add more papers.",
-            evidence=(),
-            cited_evidence_ids=(),
-        )
-
-    evidence = tuple(
+def evidence_from_hits(hits: tuple[PassageHit, ...]) -> tuple[Evidence, ...]:
+    return tuple(
         Evidence(
             evidence_id=f"E{index}",
             passage_id=hit.passage_id,
@@ -66,6 +57,19 @@ def answer_question(
         )
         for index, hit in enumerate(hits, start=1)
     )
+
+
+def answer_from_hits(question: str, hits: tuple[PassageHit, ...],
+                     generate: Generate) -> Answer:
+    if not hits:
+        return Answer(
+            status="no_evidence",
+            text="No matching paper evidence was found. Try English technical terms or add more papers.",
+            evidence=(),
+            cited_evidence_ids=(),
+        )
+
+    evidence = evidence_from_hits(hits)
     context = "\n\n".join(
         f"[{item.evidence_id}] {item.paper_title}, PDF page {item.page_number}:\n{item.text}"
         for item in evidence
@@ -80,3 +84,15 @@ def answer_question(
     else:
         status = "answered"
     return Answer(status=status, text=text, evidence=evidence, cited_evidence_ids=cited_ids)
+
+
+def answer_question(
+    library: PassageRetriever,
+    question: str,
+    generate: Generate,
+    *,
+    limit: int = 5,
+    space_id: int | None = None,
+) -> Answer:
+    hits = library.search(question, limit=limit, space_id=space_id)
+    return answer_from_hits(question, hits, generate)

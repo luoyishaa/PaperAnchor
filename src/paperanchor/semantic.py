@@ -1,14 +1,15 @@
 """Optional local embeddings and exact vector search for a small PDF library."""
 
 from dataclasses import dataclass, replace
-from contextlib import closing
 from pathlib import Path
 import sqlite3
 from typing import Callable, Protocol, Sequence
 
 import numpy as np
 
+from .database import Database
 from .library import PaperLibrary, PassageHit
+from .telemetry import timed
 
 
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
@@ -25,10 +26,13 @@ class FastEmbedProvider:
     """Load model weights only when indexing or a vector query really needs them."""
 
     def __init__(self, model_name: str = DEFAULT_EMBEDDING_MODEL,
-                 cache_dir: Path | None = None):
+                 cache_dir: Path | None = None, *, local_files_only: bool = False):
         self.name = model_name
         self.cache_dir = cache_dir
+        self.local_files_only = local_files_only
         self._model = None
+        self._counting_tokenizer = None
+        self._last_query_embedding: tuple[str, np.ndarray] | None = None
 
     @property
     def model(self):
@@ -37,6 +41,7 @@ class FastEmbedProvider:
             self._model = TextEmbedding(
                 model_name=self.name,
                 cache_dir=str(self.cache_dir) if self.cache_dir else None,
+                **({"local_files_only": True} if self.local_files_only else {}),
             )
         return self._model
 
@@ -45,7 +50,30 @@ class FastEmbedProvider:
                 for vector in self.model.passage_embed(list(texts))]
 
     def embed_query(self, text: str) -> np.ndarray:
-        return np.asarray(next(iter(self.model.query_embed(text))), dtype=np.float32)
+        cached = self._last_query_embedding
+        if cached is not None and cached[0] == text:
+            return cached[1].copy()
+        vector = np.asarray(next(iter(self.model.query_embed(text))), dtype=np.float32)
+        # Scoped comparisons search several papers with the same query. Keep
+        # only that query; storing the pair together keeps concurrent reads safe.
+        self._last_query_embedding = (text, vector.copy())
+        return vector
+
+    def count_untruncated_tokens(self, text: str) -> int:
+        """Count with the embedding tokenizer before its 128-token truncation.
+
+        FastEmbed's public token_count applies model truncation first, so a
+        2,000-token paragraph can misleadingly report 128. Clone the same
+        tokenizer and turn off truncation for chunk construction.
+        """
+        if self._counting_tokenizer is None:
+            from tokenizers import Tokenizer
+
+            tokenizer = Tokenizer.from_str(self.model.model.tokenizer.to_str())
+            tokenizer.no_truncation()
+            tokenizer.no_padding()
+            self._counting_tokenizer = tokenizer
+        return len(self._counting_tokenizer.encode(text).ids)
 
 
 @dataclass(frozen=True)
@@ -68,7 +96,8 @@ def _normalized(vector: np.ndarray) -> np.ndarray:
 class SemanticIndex:
     def __init__(self, database_path: Path):
         self.database_path = database_path
-        with closing(self._connect()) as connection, connection:
+        self.database = Database(database_path)
+        with self.database.connect() as connection:
             connection.execute(
                 """CREATE TABLE IF NOT EXISTS passage_embeddings (
                      passage_id INTEGER NOT NULL REFERENCES passages(id) ON DELETE CASCADE,
@@ -80,11 +109,7 @@ class SemanticIndex:
             )
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.database_path)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA busy_timeout = 5000")
-        return connection
+        return self.database.connect_only()
 
     def count(self, model: str) -> int:
         connection = self._connect()
@@ -142,7 +167,8 @@ class SemanticIndex:
             connection.close()
 
     def search(self, query: str, provider: EmbeddingProvider, *,
-               limit: int = 20, space_id: int | None = None) -> tuple[PassageHit, ...]:
+               limit: int = 20, space_id: int | None = None,
+               paper_id: int | None = None) -> tuple[PassageHit, ...]:
         if limit < 1:
             raise ValueError("limit must be positive")
         query_vector = _normalized(provider.embed_query(query))
@@ -159,9 +185,11 @@ class SemanticIndex:
                     JOIN passages AS p ON p.id=e.passage_id
                     JOIN papers AS d ON d.id=p.paper_id
                     {membership}
-                    WHERE e.model=? AND e.dimension=?""",
-                ((space_id, provider.name, query_vector.size)
-                 if space_id is not None else (provider.name, query_vector.size)),
+                    WHERE e.model=? AND e.dimension=?
+                      {"AND p.paper_id=?" if paper_id is not None else ""}""",
+                ((space_id,) if space_id is not None else ())
+                + (provider.name, query_vector.size)
+                + ((paper_id,) if paper_id is not None else ()),
             ).fetchall()
             if not rows:
                 return ()
@@ -187,32 +215,43 @@ class HybridRetriever:
     """Merge two ranked lists by rank, leaving their incompatible scores alone."""
 
     def __init__(self, library: PaperLibrary, index: SemanticIndex,
-                 provider: EmbeddingProvider):
+                 provider: EmbeddingProvider, *, rrf_k: int = 60):
+        if not 1 <= rrf_k <= 200:
+            raise ValueError("rrf_k must be between 1 and 200")
         self.library = library
         self.index = index
         self.provider = provider
+        self.rrf_k = rrf_k
 
     def search(self, question: str, limit: int = 5, *,
-               space_id: int | None = None) -> tuple[PassageHit, ...]:
+               space_id: int | None = None,
+               paper_id: int | None = None) -> tuple[PassageHit, ...]:
         # The default top-five path needs a wider source pool than the reranker:
         # fusion otherwise discards useful one-channel passages too early.
         pool = max(limit * 8, 40)
-        return self.candidates(question, pool, space_id=space_id)[:limit]
+        return self.candidates(question, pool, space_id=space_id,
+                               paper_id=paper_id)[:limit]
 
+    @timed("retrieval.candidates")
     def candidates(self, question: str, per_source_limit: int, *,
-                   space_id: int | None = None) -> tuple[PassageHit, ...]:
+                   space_id: int | None = None,
+                   paper_id: int | None = None) -> tuple[PassageHit, ...]:
         """Keep both sources' candidates available for a later reranker."""
-        lexical = self.library.search(question, per_source_limit, space_id=space_id)
+        scope = {"space_id": space_id}
+        if paper_id is not None:
+            scope["paper_id"] = paper_id
+        lexical = self.library.search(question, per_source_limit, **scope)
         if self.index.count(self.provider.name) == 0:
             return lexical
         semantic = self.index.search(question, self.provider, limit=per_source_limit,
-                                     space_id=space_id)
+                                     **scope)
         by_id: dict[int, PassageHit] = {}
         fused: dict[int, float] = {}
         for ranked in (lexical, semantic):
             for position, hit in enumerate(ranked, start=1):
                 by_id[hit.passage_id] = hit
-                fused[hit.passage_id] = fused.get(hit.passage_id, 0.0) + 1 / (60 + position)
+                fused[hit.passage_id] = (fused.get(hit.passage_id, 0.0)
+                                         + 1 / (self.rrf_k + position))
         ordered = sorted(fused, key=lambda passage_id: (-fused[passage_id], passage_id))
         return tuple(replace(by_id[passage_id], score=fused[passage_id])
                      for passage_id in ordered)
@@ -224,9 +263,10 @@ class Reranker(Protocol):
 
 class FastEmbedReranker:
     def __init__(self, model_name: str = "BAAI/bge-reranker-base",
-                 cache_dir: Path | None = None):
+                 cache_dir: Path | None = None, *, local_files_only: bool = False):
         self.model_name = model_name
         self.cache_dir = cache_dir
+        self.local_files_only = local_files_only
         self._model = None
 
     def score(self, question: str, texts: Sequence[str]) -> list[float]:
@@ -235,6 +275,7 @@ class FastEmbedReranker:
             self._model = TextCrossEncoder(
                 model_name=self.model_name,
                 cache_dir=str(self.cache_dir) if self.cache_dir else None,
+                **({"local_files_only": True} if self.local_files_only else {}),
             )
         return list(self._model.rerank(question, list(texts)))
 
@@ -242,14 +283,21 @@ class FastEmbedReranker:
 class RerankingRetriever:
     """Spend cross-encoder compute only on a bounded hybrid candidate set."""
 
-    def __init__(self, initial: HybridRetriever, reranker: Reranker):
+    def __init__(self, initial: HybridRetriever, reranker: Reranker, *,
+                 pool_factor: int = 4):
+        if not 4 <= pool_factor <= 16:
+            raise ValueError("pool_factor must be between 4 and 16")
         self.initial = initial
         self.reranker = reranker
+        self.pool_factor = pool_factor
 
+    @timed("retrieval.rerank")
     def search(self, question: str, limit: int = 5, *,
-               space_id: int | None = None) -> tuple[PassageHit, ...]:
-        candidates = self.initial.candidates(question, max(limit * 4, 20),
-                                             space_id=space_id)
+               space_id: int | None = None,
+               paper_id: int | None = None) -> tuple[PassageHit, ...]:
+        pool = min(80, max(limit * self.pool_factor, 20))
+        candidates = self.initial.candidates(question, pool,
+                                             space_id=space_id, paper_id=paper_id)
         if not candidates:
             return ()
         scores = self.reranker.score(question, [hit.text[:1600] for hit in candidates])
@@ -264,9 +312,11 @@ class RerankingRetriever:
 
 def build_retriever(library: PaperLibrary, index: SemanticIndex,
                     provider: EmbeddingProvider, *, rerank_model: str = "",
-                    cache_dir: Path | None = None) -> HybridRetriever | RerankingRetriever:
+                    cache_dir: Path | None = None, rrf_k: int = 60,
+                    rerank_pool_factor: int = 4) -> HybridRetriever | RerankingRetriever:
     """Use one retrieval composition for the app and its end-to-end evaluation."""
-    initial = HybridRetriever(library, index, provider)
+    initial = HybridRetriever(library, index, provider, rrf_k=rrf_k)
     if not rerank_model:
         return initial
-    return RerankingRetriever(initial, FastEmbedReranker(rerank_model, cache_dir))
+    return RerankingRetriever(initial, FastEmbedReranker(rerank_model, cache_dir),
+                              pool_factor=rerank_pool_factor)

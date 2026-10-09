@@ -1,59 +1,73 @@
 # Architecture
 
-PaperAnchor keeps paper identity, passages, source locations, research spaces, and job progress in one SQLite database. A PDF is the source artifact. Retrieval and model calls consume located passages; they never define where a citation points.
+PaperAnchor is a local paper library with a FastAPI backend and a React/TypeScript reader. SQLite stores paper metadata, located text, retrieval indexes, research spaces, annotations, conversations, and background job state. PDFs remain the source of every citation.
 
-## Module boundaries
+## From PDF to searchable evidence
 
-| Module | Owns |
+1. **Import.** `pdf.py` extracts text blocks with one-based page numbers and PDF rectangles. `library.py` identifies files by path and SHA-256, skips unchanged PDFs, and replaces changed content transactionally.
+2. **Represent.** `representation.py` builds reading units of up to 128 model tokens, joining or splitting text while retaining links to the original source blocks. `unit_index.py` tracks the PDF hash, representation version, and tokenizer identity so stale units can be rebuilt.
+3. **Index.** SQLite FTS5 provides BM25 search. `semantic.py` embeds units with `paraphrase-multilingual-MiniLM-L12-v2` and searches normalized vectors by cosine similarity. Vector rows retain their model identity and dimension. The current implementation uses an exact vector scan for a small local library.
+4. **Locate.** Retrieval results retain source block IDs, pages, and rectangles. Rebuilding the search representation does not change the coordinate system used by PDF annotations.
+
+A research space is a collection of papers that constrains both lexical and vector search. A paper may belong to multiple spaces; removing a space does not delete its PDFs. Indexing runs in a local background worker with persistent job state and incremental embedding batches.
+
+## Retrieval profiles
+
+The expanded evidence profiles share `evidence_retrieval.py` and `evidence_context.py` with the evaluation harness:
+
+- A title hint selects the closest catalog title by token-set overlap. Explicit paper selections take precedence; without a matching title, retrieval falls back to the selected research space.
+- The question retrieves 40 BM25 and 40 dense candidates. Their deduplicated union is reranked, and the first 20 hits enter context assembly.
+- The assembler first reserves space for protected direct hits. It then ranks the remaining hits, missing text from their source blocks, and eligible same-page neighbors together.
+- Overlapping source intervals are removed before adding text. Evidence headers and body text share a 4,096-token reference budget. Each emitted slice keeps its own evidence ID and source location.
+
+Candidate ranking and expansion ranking are independent policies. Weighted reciprocal rank fusion (RRF) combines model positions as `sum(weight / (60 + rank))`; it does not average incompatible raw model scores.
+
+| Web profile | API value | Candidate / expansion ranking | Protected hits |
+| --- | --- | --- | ---: |
+| Fast (MiniLM) | `evidence_minilm` | MiniLM / MiniLM | 8 |
+| Quality (BGE) | `evidence_v2` | BGE / BGE | 8 |
+| Optimized | `evidence_optimized` | Equal-weight MiniLM + BGE RRF / MiniLM | 4 |
+| Standard | `legacy` | Configured block or unit retriever | — |
+
+The rerankers are `Xenova/ms-marco-MiniLM-L-6-v2` and `BAAI/bge-reranker-base`. The optimized profile also uses verified title aliases from [`evidence_optimized.json`](../src/paperanchor/evidence_optimized.json). Each alias is bound to a paper ID and PDF hash; this packaged profile is available only when the local library matches those bindings. Aliases affect routing, not indexed text or citation headers.
+
+`evidence_profile.py` keeps models and the corpus index resident, serializes requests, and releases the SQLite read snapshot after assembly. Content revisions invalidate the index after paper, passage, unit, or vector changes. Annotation and conversation updates do not rebuild it.
+
+The browser defaults to Fast and persists the user's selection. API requests that omit `retrieval_profile` retain Standard behavior. Expanded profiles require cached local models; choose Standard when those models are not installed. Expanded profiles cannot be combined with experimental question decomposition.
+
+After semantic indexing has installed the embedding model and reference tokenizer, cache the Fast reranker from the repository root (requires a download):
+
+```sh
+python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder(model_name='Xenova/ms-marco-MiniLM-L-6-v2', cache_dir='.paperanchor/models')"
+```
+
+For Quality or Optimized, also cache `BAAI/bge-reranker-base` using the same command with that model name. With a custom database, use a `models` directory beside the database instead. Optimized still requires the matching corpus bindings described above.
+
+## Answers and the PDF reader
+
+`rag.py` assigns evidence IDs such as `E1`, sends the assembled context to the selected language model, and checks returned citation IDs against the supplied evidence. A citation links an answer to that evidence; the reader opens the stored PDF page and highlights its source region. Valid IDs do not independently verify every generated claim.
+
+`agent.py` implements the direct answer path, collection overviews, follow-up rewriting, and an optional bounded search-recovery mode. A follow-up can use the last three exchanges to resolve references before retrieval. Previous answers are conversation context, not additions to the paper index. `conversations.py` stores the original question, rewritten question, and answer snapshot per research space.
+
+Figure and table requests use a separate visual path. `visual_index.py` associates captions with embedded images, vector graphics, or table-text rows. `vision.py` selects at most two sources and sends page context plus region crops to a vision model; a user-selected rectangle supplies its crop directly. Source hashes and detector versions invalidate stale regions. Page rendering and highlights use the same unrotated PDF coordinates.
+
+## Module map
+
+| Modules | Responsibility |
 | --- | --- |
-| `pdf.py` | Text extraction, page numbers, and source rectangles. |
-| `library.py` | Paper and passage transactions, FTS5 search, annotations. |
-| `spaces.py` | Space membership; one paper can belong to several spaces. |
-| `semantic.py` | Embeddings, exact vector search, rank fusion, optional reranking. |
-| `jobs.py` | Durable semantic-index job states and a single local worker. |
-| `discovery.py` | arXiv and Semantic Scholar adapters, normalized candidates, imported metadata. |
-| `rag.py` | Evidence IDs and citation validation. |
-| `agent.py` | Bounded search, evidence assessment, and answer-basis decision. |
-| `model_config.py` and `llm.py` | Provider settings and model transport. |
-| `web.py` and `cli.py` | HTTP and command-line entry points. |
-| `frontend/` | React and TypeScript research workspace and PDF page viewer. |
-| `evals/` | Source-anchored retrieval labels, end-to-end traces, deterministic scoring, and human-review exports. |
+| `pdf`, `library`, `database` | PDF extraction, source identity, storage, annotations |
+| `representation`, `unit_index`, `semantic` | Reading units, lexical/vector indexes, standard retrieval |
+| `evidence_retrieval`, `evidence_context`, `evidence_policies` | Candidate selection, model ranking, source deduplication, context budgets |
+| `evidence_profile`, `evidence_revision` | Product profiles, model reuse, index invalidation |
+| `rag`, `agent`, `conversations` | Cited answers, question workflows, conversation history |
+| `visual_index`, `vision` | Located figure/table evidence and multimodal requests |
+| `discovery`, `spaces`, `jobs` | External paper search, library organization, indexing jobs |
+| `model_config`, `llm`, `ollama` | Model settings and remote/local model transports |
+| `web`, `cli`, `frontend/` | HTTP API, command line, browser workspace |
+| `evals/qasper_benchmark/` | Dataset preparation, evidence alignment, retrieval evaluation |
 
-The application workflow depends on a small passage-retriever interface and a model-generation function. Tests supply in-memory fakes at these boundaries. Paper discovery is separate from local indexing: source failures do not make imported papers unavailable.
+## Operating scope
 
-## Source and retrieval contracts
+Run one application process for one trusted local user. Paper discovery uses arXiv and Semantic Scholar; imported papers remain searchable when those services are unavailable. Text and vision models can be configured separately, including local Ollama models.
 
-1. The library identifies an imported PDF by its resolved path and SHA-256 content hash. Reindexing unchanged bytes is a no-op. Replacing changed bytes updates passages and full-text entries in one transaction; old annotations and vectors attached to replaced passages are removed.
-2. A passage retains the paper ID, one-based PDF page, text, and rectangle in PDF coordinates. The browser maps the rectangle onto the rendered page. The stable passage ID is shared by FTS, vectors, answer evidence, and notes.
-3. SQLite FTS5 BM25 and normalized-vector cosine search independently return ranked passages. Reciprocal rank fusion combines positions, avoiding direct addition of incompatible scores. The optional cross-encoder sees the bounded, deduplicated union of both source lists before fusion can discard one-channel candidates.
-4. Vector rows include the embedding model ID and dimension. Missing rows can be built incrementally; a failed job retains completed batches and can resume. The current exact vector scan is chosen for a small local library, not a large shared corpus.
-5. Research spaces filter both retrieval paths before fusion. The default **All papers** space contains every imported paper; deleting a custom space does not delete its PDFs.
-
-## Evidence workflow
-
-Dynamic decomposition is experimental and disabled by default after a focused
-regression showed lower fixed-label coverage and higher latency. API callers can
-explicitly set `enable_decomposition: true`; benchmark runs use `--decompose`.
-The default retains the single-rewrite workflow and its original assessment prompt.
-
-The question workflow first retrieves passages and checks support for every requested part. Supported questions proceed directly to generation. Insufficient evidence can trigger either one revised query or a model-proposed plan of at most three independently verifiable subquestions. There are no predefined question categories. Each subquestion receives its own search results plus the original evidence and a separate sufficiency check. Duplicate queries reuse their results. Nested plans are never executed; malformed or oversized plans fail closed rather than being silently truncated.
-
-The workflow also accepts an optional recovery retriever through the same passage-search interface. When the first evidence check fails, it searches the original question with that retriever, retains original passage IDs and PDF coordinates, and checks the combined evidence once more. If evidence remains insufficient, one revised query can still run. This opt-in path uses at most three searches and retains at most three times the per-search passage limit; it skips a redundant assessment if recovery finds no new passages. If the initial search finds nothing, recovery can run before returning no evidence. The app does not currently configure this experimental option, and decomposition takes precedence when enabled. The ordinary app path is unchanged.
-
-The workflow retains the deduplicated union of passages, preserving PDF coordinates. Every subquestion must pass before a final check against the original question; this catches omitted qualifiers in an otherwise successful plan. At the default five passages per search, the rewrite path retains at most ten passages and the decomposition path at most twenty. Decomposition uses at most four searches and six model calls, including the final answer (model transport retries are separate). A `SubquestionResult` records the question, query, candidate passage IDs, sufficiency decision, and gap. Candidate IDs describe what was assessed, not verified claim-level support. These records are returned by the API and exported in evaluation traces.
-
-A sufficient set is numbered `E1`, `E2`, and so on. The generated answer is checked for references to IDs that were actually supplied. Weak evidence yields an explicit gap and an optional follow-up question. A model-only answer requires caller opt-in and is labeled separately with no paper citations. The model still controls semantic sufficiency judgments; execution budgets and evidence retention are enforced in code.
-
-An evidence ID proves which passage was supplied; it does not prove that every sentence in a generated answer follows from that passage. The reader opens the stored PDF location so the user can check it.
-
-## Evaluation boundary
-
-The retrieval benchmark anchors each gold evidence set to a PDF filename, page, and short source text. The end-to-end runner calls the same retriever composition and question workflow as the app, recording searches, model assessments, answers, citations, and timing. Its deterministic scorer checks whether a complete gold set entered the initial retrieval, final evidence, and cited evidence. These are coverage measurements, not answer accuracy or entailment judgments. A separate review sheet records factuality, per-claim citation support, and the appropriateness of abstention. Saved traces can be rescored after a source-label correction without repeating model calls; the report records the label-file hash, and human reviews are bound to the exact answer and evidence by a fingerprint. Local reports contain paper excerpts and stay under ignored `.study/`.
-
-## External discovery and time
-
-Both search adapters return a common candidate containing title, authors, date or year, venue, abstract, external identifiers, and a source URL when available. Search order comes from each source. The user reviews candidates before import. For a direct import, the server accepts a validated arXiv ID, fetches arXiv metadata and PDF, and records the publication date. Semantic Scholar candidates without an arXiv ID remain links for manual PDF upload. For an existing local file named with a modern arXiv ID, the timeline infers its submission year from the ID and labels that provenance. Other local PDFs appear as **Undated**.
-
-## Execution and limits
-
-FastAPI serves the compiled frontend and runs one background semantic worker by default. SQLite job rows preserve queued, running, succeeded, and failed state; a restarted worker recovers an interrupted running job. The server is for one trusted local user and should run with one process. The PDF parser is text-only; equation, table, figure, scan, and claim-level verification require additional work. Schema changes beyond the current additive tables will need explicit migrations.
+Text extraction does not OCR scanned pages. Visual region detection is based on captions and geometry rather than a learned layout model; page-level reading is the fallback when a region cannot be located. Retrieval evaluation measures evidence coverage, not answer correctness or visual understanding. See [Evaluation](evaluation.md) for the measured scope and results.

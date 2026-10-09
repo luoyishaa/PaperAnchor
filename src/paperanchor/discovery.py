@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from xml.etree import ElementTree
 
 import httpx
+from .database import Database
 from .model_config import get_setting
 
 
@@ -167,7 +168,8 @@ class MetadataStore:
 
     def __init__(self, database_path: Path):
         self.database_path = database_path
-        with closing(self._connect()) as connection:
+        self.database = Database(database_path)
+        with self.database.connect() as connection:
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS paper_metadata (
                     paper_id INTEGER PRIMARY KEY REFERENCES papers(id) ON DELETE CASCADE,
@@ -178,16 +180,12 @@ class MetadataStore:
                     arxiv_id TEXT, doi TEXT
                 )
             """)
-            connection.commit()
 
     def _connect(self):
-        connection = sqlite3.connect(self.database_path, timeout=5)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        return connection
+        return self.database.connect_only()
 
     def put(self, paper_id: int, candidate: Candidate) -> None:
-        with closing(self._connect()) as connection, connection:
+        with self.database.connect() as connection:
             connection.execute("""
                 INSERT INTO paper_metadata
                 (paper_id, source, source_id, authors, abstract, published, year,
@@ -207,7 +205,7 @@ class MetadataStore:
                   candidate.arxiv_id, candidate.doi))
 
     def get(self, paper_id: int) -> dict | None:
-        with closing(self._connect()) as connection:
+        with self.database.connect() as connection:
             row = connection.execute("SELECT * FROM paper_metadata WHERE paper_id=?",
                                      (paper_id,)).fetchone()
             return dict(row) if row else None

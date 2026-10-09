@@ -1,14 +1,16 @@
 """Command-line interface for PDF indexing and evidence-grounded answers."""
 
 import argparse
+import logging
 from pathlib import Path
 import sys
 
 from .library import PaperLibrary
-from .llm import ModelConfigError, generate_with_config
+from .llm import ModelConfigError, ModelRequestError, generate_with_config
 from .model_config import get_setting
-from .agent import research_question
+from .agent import direct_question, research_question
 from .semantic import FastEmbedProvider, SemanticIndex, build_retriever
+from .unit_index import UnitStore, UnitSemanticIndex
 from .spaces import ALL_PAPERS_SPACE_ID, SpaceStore
 
 
@@ -33,6 +35,8 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description="Ask research PDFs with cited evidence")
     parser.add_argument("--db", type=Path, default=Path(".paperanchor/library.sqlite3"))
+    parser.add_argument("--log-level", choices=("WARNING", "INFO"), default="WARNING",
+                        help="Enable safe stage timing records with INFO")
     commands = parser.add_subparsers(dest="command", required=True)
     index = commands.add_parser("index", help="Extract and index a PDF or directory")
     index.add_argument("path", type=Path)
@@ -41,11 +45,13 @@ def main(argv: list[str] | None = None) -> int:
     search.add_argument("--limit", type=_result_limit, default=5)
     ask = commands.add_parser("ask", help="Retrieve passages and generate a cited answer")
     ask.add_argument("question")
-    ask.add_argument("--limit", type=_result_limit, default=5)
+    ask.add_argument("--limit", type=_result_limit, default=8)
     serve = commands.add_parser("serve", help="Open the local research workspace")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
     args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.WARNING)
+    logging.getLogger("paperanchor.operations").setLevel(args.log_level)
     if args.command in ("search", "ask") and not args.question.strip():
         parser.error("question must not be empty")
     if args.command == "serve":
@@ -87,16 +93,29 @@ def main(argv: list[str] | None = None) -> int:
     try:
         SpaceStore(args.db)
         provider = FastEmbedProvider(cache_dir=args.db.parent / "models")
+        representation = get_setting("PAPERANCHOR_REPRESENTATION").lower() or "units"
+        if representation not in ("blocks", "units"):
+            parser.error("PAPERANCHOR_REPRESENTATION must be 'blocks' or 'units'")
+        source = UnitStore(library) if representation == "units" else library
+        index = UnitSemanticIndex(source) if representation == "units" else SemanticIndex(args.db)
+        if representation == "units":
+            source.refresh()
+            if index.count(provider.name) < source.count_units():
+                index.build(provider)
         retriever = build_retriever(
-            library, SemanticIndex(args.db), provider,
+            source, index, provider,
             rerank_model=get_setting("PAPERANCHOR_RERANK_MODEL"),
             cache_dir=args.db.parent / "models",
         )
-        result = research_question(
+        mode = get_setting("PAPERANCHOR_ANSWER_MODE").lower() or "direct"
+        if mode not in ("direct", "agent"):
+            parser.error("PAPERANCHOR_ANSWER_MODE must be direct or agent")
+        result = (research_question if mode == "agent" else direct_question)(
             retriever, args.question, generate_with_config,
             limit=args.limit, space_id=ALL_PAPERS_SPACE_ID,
+            collection=library,
         )
-    except ModelConfigError as error:
+    except (ModelConfigError, ModelRequestError) as error:
         print(error)
         return 2
     answer = result.answer

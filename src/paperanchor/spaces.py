@@ -8,6 +8,9 @@ import sqlite3
 from typing import Iterator
 
 
+from .database import Database
+
+
 ALL_PAPERS_SPACE_ID = 1
 
 
@@ -22,7 +25,8 @@ class ResearchSpace:
 class SpaceStore:
     def __init__(self, database_path: Path):
         self.database_path = database_path
-        with self._connect() as connection:
+        self.database = Database(database_path)
+        with self.database.connect() as connection:
             connection.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS spaces (
@@ -57,14 +61,8 @@ class SpaceStore:
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
-        connection = sqlite3.connect(self.database_path)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        try:
-            with connection:
-                yield connection
-        finally:
-            connection.close()
+        with self.database.connect() as connection:
+            yield connection
 
     def list_spaces(self) -> tuple[ResearchSpace, ...]:
         with self._connect() as connection:
@@ -111,6 +109,60 @@ class SpaceStore:
                    VALUES (?, ?, ?)""",
                 (space_id, paper_id, datetime.now(timezone.utc).isoformat()),
             )
+
+    def available_papers(self, space_id: int, query: str = "", *,
+                         limit: int = 50, offset: int = 0) -> tuple[tuple[dict, ...], int]:
+        """Search papers outside a space without loading the full library."""
+        with self._connect() as connection:
+            if not connection.execute("SELECT 1 FROM spaces WHERE id=?", (space_id,)).fetchone():
+                raise ValueError("Space not found")
+            escaped = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            where = """NOT EXISTS (SELECT 1 FROM space_papers AS sp
+                       WHERE sp.space_id = ? AND sp.paper_id = d.id)
+                       AND d.title LIKE ? ESCAPE '\\'"""
+            params = (space_id, f"%{escaped}%")
+            total = connection.execute(
+                f"SELECT COUNT(*) FROM papers AS d WHERE {where}", params
+            ).fetchone()[0]
+            rows = connection.execute(
+                f"""SELECT d.id, d.title, d.page_count FROM papers AS d
+                    WHERE {where} ORDER BY d.title COLLATE NOCASE, d.id
+                    LIMIT ? OFFSET ?""", (*params, limit, offset)
+            ).fetchall()
+            return tuple(dict(row) for row in rows), total
+
+    def add_papers(self, space_id: int, paper_ids: list[int] | None = None,
+                   *, query: str | None = None) -> int:
+        """Add selected IDs or every matching paper in one transaction."""
+        if (paper_ids is None) == (query is None):
+            raise ValueError("Provide paper IDs or a search query")
+        with self._connect() as connection:
+            if not connection.execute("SELECT 1 FROM spaces WHERE id=?", (space_id,)).fetchone():
+                raise ValueError("Space not found")
+            if paper_ids is not None:
+                if len(set(paper_ids)) != len(paper_ids):
+                    raise ValueError("Duplicate paper IDs")
+                if not paper_ids:
+                    return 0
+                placeholders = ",".join("?" for _ in paper_ids)
+                found = connection.execute(
+                    f"SELECT id FROM papers WHERE id IN ({placeholders})", paper_ids
+                ).fetchall()
+                if len(found) != len(paper_ids):
+                    raise ValueError("Paper not found")
+                ids = paper_ids
+            else:
+                escaped = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+                ids = [row[0] for row in connection.execute(
+                    "SELECT id FROM papers WHERE title LIKE ? ESCAPE '\\'", (f"%{escaped}%",)
+                )]
+            now = datetime.now(timezone.utc).isoformat()
+            before = connection.total_changes
+            connection.executemany(
+                """INSERT OR IGNORE INTO space_papers (space_id, paper_id, added_at)
+                   VALUES (?, ?, ?)""", ((space_id, paper_id, now) for paper_id in ids)
+            )
+            return connection.total_changes - before
 
     def remove_paper(self, space_id: int, paper_id: int) -> None:
         if space_id == ALL_PAPERS_SPACE_ID:

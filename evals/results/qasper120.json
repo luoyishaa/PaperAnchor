@@ -1,0 +1,1780 @@
+{
+  "benchmark": "QASPER 120",
+  "dataset": "allenai/qasper",
+  "corpus_papers": 400,
+  "questions": 120,
+  "answerable_questions": 96,
+  "auxiliary_questions": 24,
+  "context_budget_reference_tokens": 4096,
+  "metric": "Complete annotated evidence coverage in the returned context; answer generation is not scored.",
+  "timing": "Warm retrieval and context assembly over all 120 questions, result caches disabled; excludes initial model loading and answer generation. Baseline timings are from the preceding run.",
+  "fingerprints": {
+    "corpus_fingerprint": "e32dba815c91614d6ceb35b31035f92576149cadf9062c3634ba9fa24d48f246",
+    "public_cases_fingerprint": "4912fa1d8f99889cdaa52a45428ccbf1e32ef896577892e5d5426e22b9c8a991",
+    "cases_fingerprint": "d9a316f9b5a1e3fd5aba87276ef8165f75c61216bb317db29f5d456eace572b1",
+    "model_fingerprint": "0b2638ccdc1b893f6105e168e02a347d9ef0bbaa4362197a16d6e3da498c42b2",
+    "alias_fingerprint": "81f61db3966c5b732a79067c42163189b1b863189cbaf79c3b4f87e74d8cdca2",
+    "tokenizer_fingerprint": "fa685fc160bbdbab64058d4fc91b60e62d207e8dc60b9af5c002c5ab946ded00"
+  },
+  "profiles": {
+    "MiniLM": {
+      "complete_questions": 79,
+      "complete_evidence_coverage": 0.8229166666666666,
+      "evidence_recall": 0.8359375,
+      "mean_context_tokens": 4041.95,
+      "latency_seconds": {
+        "mean": 2.1922118683333185,
+        "p50": 2.1084944000003816,
+        "p95": 3.2221971999988455
+      },
+      "timing_date": "2026-10-07",
+      "configuration": {
+        "route_top": 1,
+        "depth": 40,
+        "query_mode": "question",
+        "rerank_mode": "question",
+        "pool": "hybrid",
+        "strategy": "ranked_expansion",
+        "protect": 8,
+        "candidate_policy": "minilm",
+        "expansion_policy": "minilm",
+        "supplement_depth": 0,
+        "use_title_aliases": false
+      }
+    },
+    "BGE": {
+      "complete_questions": 80,
+      "complete_evidence_coverage": 0.8333333333333334,
+      "evidence_recall": 0.84375,
+      "mean_context_tokens": 4058.275,
+      "latency_seconds": {
+        "mean": 8.29668308750003,
+        "p50": 7.860725749999801,
+        "p95": 11.858969300000354
+      },
+      "timing_date": "2026-10-07",
+      "configuration": {
+        "route_top": 1,
+        "depth": 40,
+        "query_mode": "question",
+        "rerank_mode": "question",
+        "pool": "hybrid",
+        "strategy": "ranked_expansion",
+        "protect": 8,
+        "candidate_policy": "bge",
+        "expansion_policy": "bge",
+        "supplement_depth": 0,
+        "use_title_aliases": false
+      }
+    },
+    "Optimized": {
+      "complete_questions": 87,
+      "complete_evidence_coverage": 0.90625,
+      "evidence_recall": 0.9140625,
+      "mean_context_tokens": 4049.825,
+      "latency_seconds": {
+        "mean": 32.15195237666655,
+        "p50": 31.20042409999951,
+        "p95": 38.703868200002034
+      },
+      "timing_date": "2026-10-08",
+      "configuration": {
+        "route_top": 1,
+        "depth": 40,
+        "query_mode": "question",
+        "rerank_mode": "question",
+        "pool": "hybrid",
+        "strategy": "ranked_expansion",
+        "protect": 4,
+        "candidate_policy": "rrf_equal",
+        "expansion_policy": "minilm",
+        "supplement_depth": 0,
+        "use_title_aliases": true
+      },
+      "configuration_signature": "819cf8df77fa2daade7a241480c13c207f8c880fdcbe6f2e84ce0949a115309a",
+      "uncached_replay_matches_all_120": true
+    }
+  },
+  "per_question": [
+    {
+      "case_id": "q002634",
+      "paper_title": "Stereotyping and Bias in the Flickr30K Dataset",
+      "question": "What evaluations methods do they take?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4094,
+      "optimized_seconds": 30.3827558999983
+    },
+    {
+      "case_id": "q002648",
+      "paper_title": "Winograd Schemas and Machine Translation",
+      "question": "Did they collect their own datasets?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 3836,
+      "optimized_seconds": 28.66195929999958
+    },
+    {
+      "case_id": "q002660",
+      "paper_title": "Embracing data abundance: BookTest Dataset for Reading Comprehension",
+      "question": "How does their ensemble method work?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4085,
+      "optimized_seconds": 32.31763069999943
+    },
+    {
+      "case_id": "q002662",
+      "paper_title": "Embracing data abundance: BookTest Dataset for Reading Comprehension",
+      "question": "How do they show there is space for further improvement?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4090,
+      "optimized_seconds": 28.77701529999831
+    },
+    {
+      "case_id": "q002668",
+      "paper_title": "A Deeper Look into Sarcastic Tweets Using Deep Convolutional Neural Networks",
+      "question": "What are the network's baseline features?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4062,
+      "optimized_seconds": 30.677268699997512
+    },
+    {
+      "case_id": "q002689",
+      "paper_title": "Knowledge Graph Representation with Jointly Structural and Textual Encoding",
+      "question": "What neural models are used to encode the text?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4082,
+      "optimized_seconds": 29.837018300000636
+    },
+    {
+      "case_id": "q002690",
+      "paper_title": "Knowledge Graph Representation with Jointly Structural and Textual Encoding",
+      "question": "What baselines are used for comparison?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4085,
+      "optimized_seconds": 32.67380370000319
+    },
+    {
+      "case_id": "q002701",
+      "paper_title": "Predicting the Industry of Users on Social Media",
+      "question": "How many users do they look at?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4094,
+      "optimized_seconds": 29.800695599999017
+    },
+    {
+      "case_id": "q002703",
+      "paper_title": "Predicting the Industry of Users on Social Media",
+      "question": "What model did they use for their system?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4091,
+      "optimized_seconds": 34.70590380000067
+    },
+    {
+      "case_id": "q002725",
+      "paper_title": "Language Use Matters: Analysis of the Linguistic Structure of Question Texts Can Characterize Answerability in Quora",
+      "question": "how many training samples do you have for training?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4087,
+      "optimized_seconds": 31.231297900001664
+    },
+    {
+      "case_id": "q002739",
+      "paper_title": "Bringing Structure into Summaries: Crowdsourcing a Benchmark Corpus of Concept Maps",
+      "question": "What type of evaluation is proposed for this task?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4086,
+      "optimized_seconds": 31.169550299997354
+    },
+    {
+      "case_id": "q002740",
+      "paper_title": "Bringing Structure into Summaries: Crowdsourcing a Benchmark Corpus of Concept Maps",
+      "question": "What baseline system is proposed?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4094,
+      "optimized_seconds": 30.74454930000138
+    },
+    {
+      "case_id": "q002789",
+      "paper_title": "Shallow reading with Deep Learning: Predicting popularity of online content using only its title",
+      "question": "What is the average length of the title text?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4088,
+      "optimized_seconds": 25.906374800000776
+    },
+    {
+      "case_id": "q002813",
+      "paper_title": "What does Attention in Neural Machine Translation Pay Attention to?",
+      "question": "What datasets are used?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4088,
+      "optimized_seconds": 35.112279600001784
+    },
+    {
+      "case_id": "q002814",
+      "paper_title": "What does Attention in Neural Machine Translation Pay Attention to?",
+      "question": "In what cases is attention different from alignment?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4037,
+      "optimized_seconds": 26.25322889999734
+    },
+    {
+      "case_id": "q002824",
+      "paper_title": "Mining Supervisor Evaluation and Peer Feedback in Performance Appraisals",
+      "question": "What is the size of the real-life dataset?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4076,
+      "optimized_seconds": 28.044577000000572
+    },
+    {
+      "case_id": "q002831",
+      "paper_title": "Characterizing Political Fake News in Twitter by its Meta-Data",
+      "question": "What is their definition of tweets going viral?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4077,
+      "optimized_seconds": 31.149616500002594
+    },
+    {
+      "case_id": "q002833",
+      "paper_title": "Characterizing Political Fake News in Twitter by its Meta-Data",
+      "question": "What is the threshold for determining that a tweet has gone viral?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4089,
+      "optimized_seconds": 29.59318549999807
+    },
+    {
+      "case_id": "q002890",
+      "paper_title": "Neural User Simulation for Corpus-based Policy Optimisation for Spoken Dialogue Systems",
+      "question": "by how much did nus outperform abus?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4081,
+      "optimized_seconds": 28.286298800001532
+    },
+    {
+      "case_id": "q002893",
+      "paper_title": "Combining Advanced Methods in Japanese-Vietnamese Neural Machine Translation",
+      "question": "what was the baseline?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4096,
+      "optimized_seconds": 25.75386729999809
+    },
+    {
+      "case_id": "q002908",
+      "paper_title": "Text Classification based on Word Subspace with Term-Frequency",
+      "question": "What can word subspace represent?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4087,
+      "optimized_seconds": 31.989042100001825
+    },
+    {
+      "case_id": "q003163",
+      "paper_title": "Named Entity Recognition for Nepali Language",
+      "question": "What is the best model?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4086,
+      "optimized_seconds": 33.04860059999919
+    },
+    {
+      "case_id": "q003169",
+      "paper_title": "Named Entity Recognition for Nepali Language",
+      "question": "What is the source of their dataset?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4092,
+      "optimized_seconds": 29.099766600000294
+    },
+    {
+      "case_id": "q003173",
+      "paper_title": "Named Entity Recognition for Nepali Language",
+      "question": "What is the performance improvement of the grapheme-level representation model over the character-level model?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4084,
+      "optimized_seconds": 33.60197479999988
+    },
+    {
+      "case_id": "q003206",
+      "paper_title": "Open Event Extraction from Online Text using a Generative Adversarial Network",
+      "question": "Do they report results only on English data?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4093,
+      "optimized_seconds": 38.43972219999705
+    },
+    {
+      "case_id": "q003230",
+      "paper_title": "Generating Personalized Recipes from Historical User Preferences",
+      "question": "Where do they get the recipes from?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4084,
+      "optimized_seconds": 27.675280200000998
+    },
+    {
+      "case_id": "q003392",
+      "paper_title": "Learning Autocomplete Systems as a Communication Game",
+      "question": "How many participants were trying this communication game?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4093,
+      "optimized_seconds": 32.148811700000806
+    },
+    {
+      "case_id": "q003423",
+      "paper_title": "A Multi Purpose and Large Scale Speech Corpus in Persian and English for Speaker and Speech Recognition: The Deepmine Database",
+      "question": "who transcribed the corpus?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4034,
+      "optimized_seconds": 32.528573499999766
+    },
+    {
+      "case_id": "q003425",
+      "paper_title": "A Multi Purpose and Large Scale Speech Corpus in Persian and English for Speaker and Speech Recognition: The Deepmine Database",
+      "question": "what accents are present in the corpus?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4075,
+      "optimized_seconds": 31.3259450000005
+    },
+    {
+      "case_id": "q003427",
+      "paper_title": "A Multi Purpose and Large Scale Speech Corpus in Persian and English for Speaker and Speech Recognition: The Deepmine Database",
+      "question": "what age range is in the data?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4050,
+      "optimized_seconds": 33.31207869999707
+    },
+    {
+      "case_id": "q003429",
+      "paper_title": "Women in ISIS Propaganda: A Natural Language Processing Analysis of Topics and Emotions in a Comparison with Mainstream Religious Group",
+      "question": "Do they report results only on English data?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4063,
+      "optimized_seconds": 31.003792799998337
+    },
+    {
+      "case_id": "q003434",
+      "paper_title": "Medication Regimen Extraction From Clinical Conversations",
+      "question": "What is the baseline?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4093,
+      "optimized_seconds": 28.373891899998853
+    },
+    {
+      "case_id": "q003460",
+      "paper_title": "Generating Word and Document Embeddings for Sentiment Analysis",
+      "question": "Which hand-crafted features are combined with word2vec?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4061,
+      "optimized_seconds": 30.652708699999494
+    },
+    {
+      "case_id": "q003493",
+      "paper_title": "CoVoST: A Diverse Multilingual Speech-To-Text Translation Corpus",
+      "question": "What domains are covered in the corpus?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4074,
+      "optimized_seconds": 31.641488399996888
+    },
+    {
+      "case_id": "q003496",
+      "paper_title": "CoVoST: A Diverse Multilingual Speech-To-Text Translation Corpus",
+      "question": "Which languages are part of the corpus?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4093,
+      "optimized_seconds": 28.11092759999883
+    },
+    {
+      "case_id": "q003500",
+      "paper_title": "CoVoST: A Diverse Multilingual Speech-To-Text Translation Corpus",
+      "question": "How big is Augmented LibriSpeech dataset?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4086,
+      "optimized_seconds": 28.76113649999752
+    },
+    {
+      "case_id": "q003527",
+      "paper_title": "From English To Foreign Languages: Transferring Pre-trained Language Models",
+      "question": "Is the system tested on low-resource languages?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4088,
+      "optimized_seconds": 32.14375260000088
+    },
+    {
+      "case_id": "q003528",
+      "paper_title": "From English To Foreign Languages: Transferring Pre-trained Language Models",
+      "question": "What languages are the model transferred to?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4075,
+      "optimized_seconds": 29.587742600000638
+    },
+    {
+      "case_id": "q003532",
+      "paper_title": "How To Avoid Being Eaten By a Grue: Exploration Strategies for Text-Adventure Agents",
+      "question": "What are the results from these proposed strategies?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4051,
+      "optimized_seconds": 27.55705570000282
+    },
+    {
+      "case_id": "q003544",
+      "paper_title": "A Framework for the Computational Linguistic Analysis of Dehumanization",
+      "question": "Do they model semantics ",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4090,
+      "optimized_seconds": 39.644751100000576
+    },
+    {
+      "case_id": "q003661",
+      "paper_title": "Digital Stylometry: Linking Profiles Across Social Networks",
+      "question": "Does this paper discuss the potential these techniques have for invading user privacy?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 3700,
+      "optimized_seconds": 30.341400400000566
+    },
+    {
+      "case_id": "q003662",
+      "paper_title": "Digital Stylometry: Linking Profiles Across Social Networks",
+      "question": "How is the gold standard defined?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4073,
+      "optimized_seconds": 26.36612100000275
+    },
+    {
+      "case_id": "q003700",
+      "paper_title": "Nonsymbolic Text Representation",
+      "question": "Do they have an elementary unit of text?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4075,
+      "optimized_seconds": 32.97117739999885
+    },
+    {
+      "case_id": "q003717",
+      "paper_title": "Two are Better than One: An Ensemble of Retrieval- and Generation-Based Dialog Systems",
+      "question": "How does inference time compare to other methods?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4096,
+      "optimized_seconds": 27.7845419999976
+    },
+    {
+      "case_id": "q003740",
+      "paper_title": "Interpreting the Syntactic and Social Elements of the Tweet Representations via Elementary Property Prediction Tasks",
+      "question": "In what way does each classifier evaluate one of the syntactic or social properties which are salient for a tweet?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4073,
+      "optimized_seconds": 35.240502099997684
+    },
+    {
+      "case_id": "q003741",
+      "paper_title": "Spotting Rumors via Novelty Detection",
+      "question": "What previous methods do they compare against?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4079,
+      "optimized_seconds": 36.94056169999749
+    },
+    {
+      "case_id": "q003742",
+      "paper_title": "Spotting Rumors via Novelty Detection",
+      "question": "What is their evaluation metric?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4095,
+      "optimized_seconds": 29.803822399997443
+    },
+    {
+      "case_id": "q003743",
+      "paper_title": "Spotting Rumors via Novelty Detection",
+      "question": "Are their methods fully supervised?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4073,
+      "optimized_seconds": 29.931896099998994
+    },
+    {
+      "case_id": "q003744",
+      "paper_title": "Spotting Rumors via Novelty Detection",
+      "question": "Do they build a dataset of rumors?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4080,
+      "optimized_seconds": 36.34651379999923
+    },
+    {
+      "case_id": "q003745",
+      "paper_title": "Spotting Rumors via Novelty Detection",
+      "question": "What languages do they evaluate their methods on?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4080,
+      "optimized_seconds": 38.703868200002034
+    },
+    {
+      "case_id": "q003746",
+      "paper_title": "Spotting Rumors via Novelty Detection",
+      "question": "How do they define rumors?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4087,
+      "optimized_seconds": 34.47006010000041
+    },
+    {
+      "case_id": "q003767",
+      "paper_title": "PAMPO: using pattern matching and pos-tagging for effective Named Entities recognition in Portuguese",
+      "question": "how many rules did they use?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4071,
+      "optimized_seconds": 34.02451849999852
+    },
+    {
+      "case_id": "q003785",
+      "paper_title": "Automated Hate Speech Detection and the Problem of Offensive Language",
+      "question": "How many users does their dataset have?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4062,
+      "optimized_seconds": 29.783372199999576
+    },
+    {
+      "case_id": "q003797",
+      "paper_title": "Automatic Argumentative-Zoning Using Word2vec",
+      "question": "How are the sentence embeddings generated?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 3725,
+      "optimized_seconds": 27.000370400000975
+    },
+    {
+      "case_id": "q003802",
+      "paper_title": "Unfolding and Shrinking Neural Machine Translation Ensembles",
+      "question": "Do they explore other language pairs?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4081,
+      "optimized_seconds": 35.08691650000037
+    },
+    {
+      "case_id": "q003836",
+      "paper_title": "Content-Based Table Retrieval for Web Queries",
+      "question": "Do they use the unstructured text on the webpage that was the source of the table?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4068,
+      "optimized_seconds": 34.255865999999514
+    },
+    {
+      "case_id": "q003839",
+      "paper_title": "Content-Based Table Retrieval for Web Queries",
+      "question": "How are the tables extracted from the HTML?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4096,
+      "optimized_seconds": 30.351113100001385
+    },
+    {
+      "case_id": "q003896",
+      "paper_title": "A Study on Neural Network Language Modeling",
+      "question": "What language model architectures are examined?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4080,
+      "optimized_seconds": 32.57685280000078
+    },
+    {
+      "case_id": "q003926",
+      "paper_title": "Iterative Policy Learning in End-to-End Trainable Task-Oriented Neural Dialog Models",
+      "question": "Do they create the basic dialog agent and basic user simulator separately?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4061,
+      "optimized_seconds": 35.105189699999755
+    },
+    {
+      "case_id": "q003990",
+      "paper_title": "Enhance word representation for out-of-vocabulary on Ubuntu dialogue corpus",
+      "question": "how does end of utterance and token tags affect the performance",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4091,
+      "optimized_seconds": 34.67797320000318
+    },
+    {
+      "case_id": "q004007",
+      "paper_title": "EiTAKA at SemEval-2018 Task 1: An Ensemble of N-Channels ConvNet and XGboost Regressors for Emotion Analysis of Tweets",
+      "question": "How is the data labeled?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4078,
+      "optimized_seconds": 31.433343400000012
+    },
+    {
+      "case_id": "q004009",
+      "paper_title": "EiTAKA at SemEval-2018 Task 1: An Ensemble of N-Channels ConvNet and XGboost Regressors for Emotion Analysis of Tweets",
+      "question": "How long is the dataset?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4054,
+      "optimized_seconds": 31.974545099998068
+    },
+    {
+      "case_id": "q004029",
+      "paper_title": "The Rapidly Changing Landscape of Conversational Agents",
+      "question": "What are the limitations of the currently used quantitative metrics? e.g. why are they not 'good'?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4096,
+      "optimized_seconds": 38.58684650000214
+    },
+    {
+      "case_id": "q004030",
+      "paper_title": "The Rapidly Changing Landscape of Conversational Agents",
+      "question": "What metrics are typically used to compare models?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4090,
+      "optimized_seconds": 35.01303510000071
+    },
+    {
+      "case_id": "q004033",
+      "paper_title": "The Rapidly Changing Landscape of Conversational Agents",
+      "question": "What type of neural models are used?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4084,
+      "optimized_seconds": 35.264780400000745
+    },
+    {
+      "case_id": "q004034",
+      "paper_title": "The Rapidly Changing Landscape of Conversational Agents",
+      "question": "What type of statistical models were used initially?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4085,
+      "optimized_seconds": 36.16333950000262
+    },
+    {
+      "case_id": "q004055",
+      "paper_title": "\"With 1 follower I must be AWESOME :P\". Exploring the role of irony markers in irony recognition",
+      "question": "What type of frequency analysis was used?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4053,
+      "optimized_seconds": 30.087046999997256
+    },
+    {
+      "case_id": "q004059",
+      "paper_title": "Transcribing Lyrics From Commercial Song Audio: The First Step Towards Singing Content Processing",
+      "question": "How many songs were collected?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4051,
+      "optimized_seconds": 27.44775160000063
+    },
+    {
+      "case_id": "q004075",
+      "paper_title": "NRC-Canada at SMM4H Shared Task: Classifying Tweets Mentioning Adverse Drug Reactions and Medication Intake",
+      "question": "what was the size of the datasets?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4079,
+      "optimized_seconds": 33.368050699999
+    },
+    {
+      "case_id": "q004090",
+      "paper_title": "Hierarchical Neural Story Generation",
+      "question": "Where are the stories collected from?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4075,
+      "optimized_seconds": 30.21748469999875
+    },
+    {
+      "case_id": "q004091",
+      "paper_title": "Extrapolation in NLP",
+      "question": "What dimensions do the considered embeddings have?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4075,
+      "optimized_seconds": 27.743146500000876
+    },
+    {
+      "case_id": "q004098",
+      "paper_title": "Phrase Table as Recommendation Memory for Neural Machine Translation",
+      "question": "what were the evaluation metrics?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4064,
+      "optimized_seconds": 28.48721210000076
+    },
+    {
+      "case_id": "q004117",
+      "paper_title": "#SarcasmDetection is soooo general! Towards a Domain-Independent Approach for Detecting Sarcasm",
+      "question": "what domains are explored?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4069,
+      "optimized_seconds": 28.8698473000004
+    },
+    {
+      "case_id": "q004171",
+      "paper_title": "Assessing Gender Bias in Machine Translation -- A Case Study with Google Translate",
+      "question": "Which of the 12 languages showed the strongest tendency towards male defaults?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4082,
+      "optimized_seconds": 69.44085790000099
+    },
+    {
+      "case_id": "q004252",
+      "paper_title": "Toward Unsupervised Text Content Manipulation",
+      "question": "How do they obtain structured data?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4084,
+      "optimized_seconds": 36.02280339999925
+    },
+    {
+      "case_id": "q004254",
+      "paper_title": "Toward Unsupervised Text Content Manipulation",
+      "question": "Which competing objectives for their unsupevised method do they use?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4088,
+      "optimized_seconds": 36.78210240000044
+    },
+    {
+      "case_id": "q004261",
+      "paper_title": "Author Profiling for Hate Speech Detection",
+      "question": "Is the dataset used in other work?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4087,
+      "optimized_seconds": 33.24858559999848
+    },
+    {
+      "case_id": "q004262",
+      "paper_title": "Author Profiling for Hate Speech Detection",
+      "question": "What is the drawback to methods that rely on textual cues?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4093,
+      "optimized_seconds": 39.07311679999839
+    },
+    {
+      "case_id": "q004264",
+      "paper_title": "Categorization in the Wild: Generalizing Cognitive Models to Naturalistic Data across Languages",
+      "question": "what languages did they evaluate on?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4082,
+      "optimized_seconds": 33.915799099999276
+    },
+    {
+      "case_id": "q004266",
+      "paper_title": "Categorization in the Wild: Generalizing Cognitive Models to Naturalistic Data across Languages",
+      "question": "do language share categories? ",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4090,
+      "optimized_seconds": 33.07788349999828
+    },
+    {
+      "case_id": "q004295",
+      "paper_title": "A system for the 2019 Sentiment, Emotion and Cognitive State Task of DARPAs LORELEI project",
+      "question": "Did they pre-train on existing sentiment corpora?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4094,
+      "optimized_seconds": 32.185325499998726
+    },
+    {
+      "case_id": "q004297",
+      "paper_title": "A system for the 2019 Sentiment, Emotion and Cognitive State Task of DARPAs LORELEI project",
+      "question": "How many languages are in the dataset?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4077,
+      "optimized_seconds": 30.18744660000084
+    },
+    {
+      "case_id": "q004328",
+      "paper_title": "A Causality-Guided Prediction of the TED Talk Ratings from the Speech-Transcripts using Neural Networks",
+      "question": "How does publicity bias the dataset?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4065,
+      "optimized_seconds": 29.67907440000272
+    },
+    {
+      "case_id": "q004343",
+      "paper_title": "Episodic Memory in Lifelong Language Learning",
+      "question": "Do they compare against other models?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4079,
+      "optimized_seconds": 33.61911830000099
+    },
+    {
+      "case_id": "q004344",
+      "paper_title": "Episodic Memory in Lifelong Language Learning",
+      "question": "What is episodic memory?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4096,
+      "optimized_seconds": 37.538535100000445
+    },
+    {
+      "case_id": "q004367",
+      "paper_title": "Character n-gram Embeddings to Improve RNN Language Models",
+      "question": "Which word embeddings do they compare against?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4094,
+      "optimized_seconds": 34.03023089999988
+    },
+    {
+      "case_id": "q004372",
+      "paper_title": "A Focus on Neural Machine Translation for African Languages",
+      "question": "What NMT techniques did they explore?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4088,
+      "optimized_seconds": 31.989188299998204
+    },
+    {
+      "case_id": "q004398",
+      "paper_title": "Multitask Learning for Blackmarket Tweet Detection",
+      "question": "What language is explored in this paper?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4083,
+      "optimized_seconds": 25.919070199997805
+    },
+    {
+      "case_id": "q004399",
+      "paper_title": "Multitask Learning for Blackmarket Tweet Detection",
+      "question": "What blackmarket services do they look at?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4086,
+      "optimized_seconds": 26.134802900000068
+    },
+    {
+      "case_id": "q004410",
+      "paper_title": "Semantic Web for Machine Translation: Challenges and Directions",
+      "question": "What are the challenges associated with the use of Semantic Web technologies in Machine Translation?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 3754,
+      "optimized_seconds": 29.19838349999918
+    },
+    {
+      "case_id": "q004457",
+      "paper_title": "Towards Better Understanding of Spontaneous Conversations: Overcoming Automatic Speech Recognition Errors With Intent Recognition",
+      "question": "Which dataset do they use?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4095,
+      "optimized_seconds": 36.39275120000093
+    },
+    {
+      "case_id": "q004482",
+      "paper_title": "Real-World Conversational AI for Hotel Bookings",
+      "question": "What is the baseline?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4050,
+      "optimized_seconds": 24.451020500000595
+    },
+    {
+      "case_id": "q004495",
+      "paper_title": "A survey of cross-lingual features for zero-shot cross-lingual semantic parsing",
+      "question": "How many Universal Dependency features are considered?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4071,
+      "optimized_seconds": 29.136442799997894
+    },
+    {
+      "case_id": "q004497",
+      "paper_title": "A survey of cross-lingual features for zero-shot cross-lingual semantic parsing",
+      "question": "How big is the Parallel Meaning Bank?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4079,
+      "optimized_seconds": 27.204558699999325
+    },
+    {
+      "case_id": "q004503",
+      "paper_title": "Multilingual and Multi-Aspect Hate Speech Analysis",
+      "question": "What languages does the new dataset contain?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4092,
+      "optimized_seconds": 34.84427030000006
+    },
+    {
+      "case_id": "q004505",
+      "paper_title": "Multilingual and Multi-Aspect Hate Speech Analysis",
+      "question": "How big is their dataset?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4084,
+      "optimized_seconds": 33.399396599998
+    },
+    {
+      "case_id": "q004571",
+      "paper_title": "Hint-Based Training for Non-Autoregressive Machine Translation",
+      "question": "How do you know the word alignments are correct?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4089,
+      "optimized_seconds": 61.524030100001255
+    },
+    {
+      "case_id": "q004575",
+      "paper_title": "Hint-Based Training for Non-Autoregressive Machine Translation",
+      "question": "Are the results applicable to other language pairs than German-English?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4093,
+      "optimized_seconds": 33.01217550000001
+    },
+    {
+      "case_id": "q004580",
+      "paper_title": "Generating Black-Box Adversarial Examples for Text Classifiers Using a Deep Reinforced Model",
+      "question": "Are all generated examples semantics-preserving perturbations to the original text?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.0,
+      "optimized_context_tokens": 4090,
+      "optimized_seconds": 37.142876599999
+    },
+    {
+      "case_id": "q004591",
+      "paper_title": "Subword ELMo",
+      "question": "What languages are evaluated?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4083,
+      "optimized_seconds": 31.039984700000787
+    },
+    {
+      "case_id": "q004592",
+      "paper_title": "Subword ELMo",
+      "question": "Does the training of ESuLMo take longer compared to ELMo?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 3255,
+      "optimized_seconds": 25.579047499999433
+    },
+    {
+      "case_id": "q004593",
+      "paper_title": "Subword ELMo",
+      "question": "How long is the vocabulary of subwords?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 3707,
+      "optimized_seconds": 26.805432299999666
+    },
+    {
+      "case_id": "q004626",
+      "paper_title": "Towards Automatic Bot Detection in Twitter for Health-related Tasks",
+      "question": "How can an existing bot detection system by customized for health-related research?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4068,
+      "optimized_seconds": 29.28630340000018
+    },
+    {
+      "case_id": "q004638",
+      "paper_title": "TexTrolls: Identifying Russian Trolls on Twitter from a Textual Perspective",
+      "question": "Are results reported only on English data?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4058,
+      "optimized_seconds": 31.322610400002304
+    },
+    {
+      "case_id": "q004680",
+      "paper_title": "Clotho: An Audio Captioning Dataset",
+      "question": "How many annotators did they have?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4086,
+      "optimized_seconds": 31.06129250000231
+    },
+    {
+      "case_id": "q004689",
+      "paper_title": "Memory-Augmented Recurrent Networks for Dialogue Coherence",
+      "question": "Which of two design architectures have better performance?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4078,
+      "optimized_seconds": 29.307332600001246
+    },
+    {
+      "case_id": "q004702",
+      "paper_title": "Multi-Module System for Open Domain Chinese Question Answering over Knowledge Base",
+      "question": "What is the state-of-the-art model in this task?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4079,
+      "optimized_seconds": 29.256181200002175
+    },
+    {
+      "case_id": "q004703",
+      "paper_title": "Multi-Module System for Open Domain Chinese Question Answering over Knowledge Base",
+      "question": "How does this result compare to other methods KB QA in CCKS2019?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 3833,
+      "optimized_seconds": 28.117584100000386
+    },
+    {
+      "case_id": "q004732",
+      "paper_title": "Query-bag Matching with Mutual Coverage for Information-seeking Conversations in E-commerce",
+      "question": "What datasets are used for experiments?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 3744,
+      "optimized_seconds": 24.526614399997925
+    },
+    {
+      "case_id": "q004749",
+      "paper_title": "Multimodal Intelligence: Representation Learning, Information Fusion, and Applications",
+      "question": "What are special architectures this review focuses on that are related to multimodal fusion?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4091,
+      "optimized_seconds": 35.92601819999982
+    },
+    {
+      "case_id": "q004767",
+      "paper_title": "Experiments in Detecting Persuasion Techniques in the News",
+      "question": "How many layers does the neural network have?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4080,
+      "optimized_seconds": 27.154978499998833
+    },
+    {
+      "case_id": "q004794",
+      "paper_title": "A Transformer-based approach to Irony and Sarcasm detection",
+      "question": "How are the three different forms defined in this work?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4078,
+      "optimized_seconds": 40.63639139999941
+    },
+    {
+      "case_id": "q004796",
+      "paper_title": "A Transformer-based approach to Irony and Sarcasm detection",
+      "question": "Does approach handle overlapping forms (e.g., metaphor and irony)?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": false,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4094,
+      "optimized_seconds": 34.10465760000079
+    },
+    {
+      "case_id": "q004798",
+      "paper_title": "End-to-End Trainable Non-Collaborative Dialog System",
+      "question": "How big is the ANTISCAM dataset? ",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4094,
+      "optimized_seconds": 30.560197400001925
+    },
+    {
+      "case_id": "q004879",
+      "paper_title": "Insertion-Deletion Transformer",
+      "question": "How much is BELU score difference between proposed approach and insertion-only method?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 3604,
+      "optimized_seconds": 28.150536499997543
+    },
+    {
+      "case_id": "q004883",
+      "paper_title": "Adversarial Training for Aspect-Based Sentiment Analysis with BERT",
+      "question": "What are the modifications made to post-trained BERT?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4077,
+      "optimized_seconds": 36.3826713999988
+    },
+    {
+      "case_id": "q004892",
+      "paper_title": "autoNLP: NLP Feature Recommendations for Text Analytics Applications",
+      "question": "How this system recommend features for the new application?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4071,
+      "optimized_seconds": 36.00315630000114
+    },
+    {
+      "case_id": "q004895",
+      "paper_title": "autoNLP: NLP Feature Recommendations for Text Analytics Applications",
+      "question": "What are meta elements of language for specifying NLP features?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": false,
+        "BGE": true,
+        "Optimized": false
+      },
+      "optimized_evidence_recall": 0.75,
+      "optimized_context_tokens": 4071,
+      "optimized_seconds": 37.80759680000119
+    },
+    {
+      "case_id": "q004987",
+      "paper_title": "Abstractive Summarization with Combination of Pre-trained Sequence-to-Sequence and Saliency Models",
+      "question": "What is the previous state-of-the-art?",
+      "answerable": true,
+      "complete_evidence": {
+        "MiniLM": true,
+        "BGE": true,
+        "Optimized": true
+      },
+      "optimized_evidence_recall": 1.0,
+      "optimized_context_tokens": 4058,
+      "optimized_seconds": 29.83280519999971
+    },
+    {
+      "case_id": "q004990",
+      "paper_title": "Abstractive Summarization with Combination of Pre-trained Sequence-to-Sequence and Saliency Models",
+      "question": "What are the languages of the datasets?",
+      "answerable": false,
+      "complete_evidence": {
+        "MiniLM": null,
+        "BGE": null,
+        "Optimized": null
+      },
+      "optimized_evidence_recall": null,
+      "optimized_context_tokens": 4036,
+      "optimized_seconds": 28.078058099999907
+    }
+  ]
+}

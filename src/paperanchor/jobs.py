@@ -8,6 +8,7 @@ import sqlite3
 from threading import Event, Thread
 from typing import Callable
 
+from .database import Database
 from .semantic import EmbeddingProvider, SemanticIndex
 
 
@@ -30,7 +31,8 @@ class Job:
 class JobStore:
     def __init__(self, database_path: Path):
         self.database_path = database_path
-        with closing(self._connect()) as connection, connection:
+        self.database = Database(database_path)
+        with self.database.connect() as connection:
             connection.execute(
                 """CREATE TABLE IF NOT EXISTS jobs (
                      id INTEGER PRIMARY KEY,
@@ -46,10 +48,7 @@ class JobStore:
             )
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.database_path)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA busy_timeout = 5000")
-        return connection
+        return self.database.connect_only()
 
     @staticmethod
     def _job(row: sqlite3.Row) -> Job:
@@ -69,6 +68,8 @@ class JobStore:
 
     def enqueue(self, kind: str) -> Job:
         with closing(self._connect()) as connection, connection:
+            # Reserve the writer before reading so concurrent enqueues serialize.
+            connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 """SELECT * FROM jobs WHERE kind=? AND state IN ('queued', 'running')
                    ORDER BY id DESC LIMIT 1""", (kind,)
@@ -81,7 +82,8 @@ class JobStore:
                    VALUES (?, 'queued', 0, 0, NULL, ?, ?)""", (kind, now, now)
             )
             job_id = cursor.lastrowid
-        return self.get(job_id)
+            row = connection.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+            return self._job(row)
 
     def recover(self) -> None:
         with closing(self._connect()) as connection, connection:
@@ -92,6 +94,8 @@ class JobStore:
 
     def claim_next(self) -> Job | None:
         with closing(self._connect()) as connection, connection:
+            # Selection and transition must share one write transaction.
+            connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
                 "SELECT id FROM jobs WHERE state='queued' ORDER BY id LIMIT 1"
             ).fetchone()
@@ -102,7 +106,8 @@ class JobStore:
                 (_now(), row["id"]),
             )
             job_id = row["id"]
-        return self.get(job_id)
+            row = connection.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+            return self._job(row)
 
     def progress(self, job_id: int, completed: int, total: int) -> None:
         with closing(self._connect()) as connection, connection:

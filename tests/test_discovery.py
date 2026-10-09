@@ -79,13 +79,20 @@ def test_remote_search_and_import_keep_metadata_with_local_pdf(tmp_path: Path):
 
 
 def test_arxiv_filename_year_is_labeled_as_an_inference(tmp_path: Path):
+    class FakeEmbedding:
+        name = "test-year-inference"
+        def embed_passages(self, texts):
+            return [np.array([1.0, 0.0], dtype=np.float32) for _ in texts]
+        def embed_query(self, _text):
+            return np.array([1.0, 0.0], dtype=np.float32)
+
     path = tmp_path / "1706.03762v7.pdf"
     with pymupdf.open() as document:
         page = document.new_page()
         page.insert_text((72, 90), "Attention evidence")
         document.save(path)
     PaperLibrary(tmp_path / "library.sqlite3").index_pdf(path)
-    with TestClient(create_app(tmp_path / "library.sqlite3")) as client:
+    with TestClient(create_app(tmp_path / "library.sqlite3", embedding_provider=FakeEmbedding())) as client:
         paper = client.get("/api/papers").json()[0]
     assert paper["year"] == 2017
     assert paper["year_basis"] == "arxiv_filename"

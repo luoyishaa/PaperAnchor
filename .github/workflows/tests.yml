@@ -30,6 +30,8 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
       - name: Check wheel includes the frontend
+        run: python scripts/build_wheel.py
+      - name: Smoke-test the installed wheel
         run: |
-          python -m build --wheel
-          python -c "from pathlib import Path; from zipfile import ZipFile; wheel = next(Path('dist').glob('*.whl')); names = ZipFile(wheel).namelist(); assert 'paperanchor/static/index.html' in names; assert any(name.startswith('paperanchor/static/assets/') and name.endswith('.js') for name in names)"
+          python -m pip install --no-deps --force-reinstall dist/*.whl
+          python scripts/smoke_wheel.py

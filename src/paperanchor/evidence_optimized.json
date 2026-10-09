@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "method": "R2",
+  "config": {
+    "route_top": 1,
+    "depth": 40,
+    "query_mode": "question",
+    "rerank_mode": "question",
+    "pool": "hybrid",
+    "strategy": "ranked_expansion",
+    "protect": 4,
+    "candidate_policy": "rrf_equal",
+    "expansion_policy": "minilm",
+    "supplement_depth": 0,
+    "use_title_aliases": true
+  },
+  "title_aliases": [
+    {
+      "paper_id": 33,
+      "file_hash": "240ab18d6050f9316f8a2bc2b38088ba940a218c39651a86168a1e97e93ec694",
+      "title": "Semantic Structure and Interpretability of Word Embeddings"
+    },
+    {
+      "paper_id": 43,
+      "file_hash": "a9fef87a3c51c41f01c243f8f5da7a6496ef8a766698d667cf92f07b640d1374",
+      "title": "\"What is Relevant in a Text Document?\": An Interpretable Machine Learning Approach"
+    },
+    {
+      "paper_id": 49,
+      "file_hash": "2bbefb8d07f4e109951af2d5e79102713d9bed58ec102a390df6480ae4adeb75",
+      "title": "Representation Learning for Discovering Phonemic Tone Contours"
+    },
+    {
+      "paper_id": 56,
+      "file_hash": "3e91abcb8fc8a9441860f93a8f1be6f13fc3adbee90aef6be3da12e23db09544",
+      "title": "Non-native Speaker Verification for Spoken Language Assessment"
+    },
+    {
+      "paper_id": 69,
+      "file_hash": "575cc3e8f2134d6601c1a6d67ade54804e51e147ccd476830b83b0511481f40c",
+      "title": "Unsupervised Text Summarization via Mixed Model Back-Translation"
+    },
+    {
+      "paper_id": 77,
+      "file_hash": "be2346a1f1e3ca560ba1678e9ff62ac6970733856979f0fc6f88937921109446",
+      "title": "Simultaneous Speech Recognition and Speaker Diarization for Monaural Dialogue Recordings with Target-Speaker Acoustic Models"
+    },
+    {
+      "paper_id": 90,
+      "file_hash": "96ba2911c872056372709e8bcad7eb79d4c677e8da950a0690395da305bf58ff",
+      "title": "Spatial Concept Acquisition for a Mobile Robot that Integrates Self-Localization and Unsupervised Word Discovery from Spoken Sentences"
+    },
+    {
+      "paper_id": 97,
+      "file_hash": "e004ce372da9875e5a1cf1f35795f37cc3a7826aba9cfe88bd1e78694c72c41d",
+      "title": "Investigating Linguistic Pattern Ordering in Hierarchical Natural Language Generation"
+    },
+    {
+      "paper_id": 100,
+      "file_hash": "7be66a3f274d661f579e71cadafb2a8572643aea605f575d5c589f4126462017",
+      "title": "Localized Flood DetectionWith Minimal Labeled Social Media Data Using Transfer Learning"
+    },
+    {
+      "paper_id": 105,
+      "file_hash": "35257670b39b487c1283b07f39fa6dac015eac1d08b954d6c7bdd3f56f92fdeb",
+      "title": "Rnn-transducer with language bias for end-to-end Mandarin-English code-switching speech recognition"
+    },
+    {
+      "paper_id": 112,
+      "file_hash": "8d9e4098529e72a0997b51b937e61ec4981024aee09fb18869195e27a07dfad0",
+      "title": "Learning Supervised Topic Models for Classification and Regression from Crowds"
+    },
+    {
+      "paper_id": 126,
+      "file_hash": "0fb9e3e11253292f5253a6fa5845dc72b31ad04a43096b35e9bce57ae1d23390",
+      "title": "Automating Political Bias Prediction"
+    },
+    {
+      "paper_id": 147,
+      "file_hash": "0de221e48184fa3f9046cbd73890f65447c771cacc46c5686a9a54297d6bac49",
+      "title": "The emergent algebraic structure of RNNs and embeddings in NLP"
+    },
+    {
+      "paper_id": 166,
+      "file_hash": "d516b0ec5188a4de53800660ffa51d80f47ab647721a3bc80ae1331446a7b716",
+      "title": "CN-CELEB: a challenging Chinese speaker recognition dataset"
+    },
+    {
+      "paper_id": 181,
+      "file_hash": "7281762ab75b6cfb14f19f05a5ce8eaf2987308a6982fed95338b8a52f68f1d9",
+      "title": "Learning High-order Structural and Attribute information by Knowledge Graph Attention Networks for Enhancing Knowledge Graph Embedding"
+    },
+    {
+      "paper_id": 184,
+      "file_hash": "2026a4e0f21d9758ba43bf94aa9063fd12f563bc77d363b550edd6d7dd5e666f",
+      "title": "Joint Learning of Sentence Embeddings for Relevance and Entailment"
+    },
+    {
+      "paper_id": 225,
+      "file_hash": "46f1295443503448a2a8161d1a4ea96d361fd8b9d01d1d0cc7a4c62006843e2b",
+      "title": "Fully Convolutional Speech Recognition"
+    },
+    {
+      "paper_id": 228,
+      "file_hash": "e76e2e38025c7d9474ba942e9eb134d586876ac9ef4e8f7f9bd0ea7b827c13ee",
+      "title": "A Multi Purpose and Large Scale Speech Corpus in Persian and English for Speaker and Speech Recognition: The Deepmine Database"
+    },
+    {
+      "paper_id": 254,
+      "file_hash": "63b6c65aa0c423c90e9a9c83a876d38e68b9c7c62b3409d71cc7bc099f44b6fe",
+      "title": "Hierarchical Transformers for Long Document Classification"
+    },
+    {
+      "paper_id": 266,
+      "file_hash": "38f95ba763e147216fe590647866115103872d7c9ce2cba545253e70586a6c73",
+      "title": "PitchNet: Unsupervised Singing Voice Conversion with Pitch Adversarial Network"
+    },
+    {
+      "paper_id": 273,
+      "file_hash": "69e1ce2b14c1e240c592b1ae10f8c7e2b06b0817414b952a7fffcb235fae6e25",
+      "title": "A Corpus for Automatic Readability Assessment and Text Simplification of German"
+    },
+    {
+      "paper_id": 286,
+      "file_hash": "2570924a56f511bbce18f0a7363b1cc73e5a7b921ceebb64fdb8e2f99356f25b",
+      "title": "Efficient Transfer Learning Schemes for Personalized Language Modeling using Recurrent Neural Network"
+    },
+    {
+      "paper_id": 293,
+      "file_hash": "c98843f9f09dd96360aca8f98bc2c7eebcdeafddb13502fc42619b683fc67c9b",
+      "title": "Twitter Job/Employment Corpus: A Dataset of Job-Related Discourse Built with Humans in the Loop"
+    },
+    {
+      "paper_id": 300,
+      "file_hash": "4cb0a5a77415f5ab751f6a86b97388368efd4d48d0bd0e62831aee48dbfdeebb",
+      "title": "Robust Speech Recognition Using Generative Adversarial Networks"
+    },
+    {
+      "paper_id": 304,
+      "file_hash": "172049a1970a3ddc2db87eea8cf8566b8e57aa75d81830dd03edccbe83af3f6e",
+      "title": "Language Transfer of Audio Word2Vec: Learning Audio Segment Representations without Target Language Data"
+    },
+    {
+      "paper_id": 315,
+      "file_hash": "b14d00ebc35731c01d44f4efd576d8b73b06c33fa41ab81551933cc8655d3496",
+      "title": "Multimodal Intelligence: Representation Learning, Information Fusion, and Applications"
+    },
+    {
+      "paper_id": 340,
+      "file_hash": "4d0e4a983a34e46b6e1f303d736ce65ec09f198a4b15efefde2c40b0d086ef2b",
+      "title": "Transcribing Lyrics From Commercial Song Audio: The First Step Towards Singing Content Processing"
+    },
+    {
+      "paper_id": 369,
+      "file_hash": "e4ea422d7b19eaaedcb6a800639babad8c46dd388c92dd01453890e54b1dbdcd",
+      "title": "Phonetic-and-Semantic Embedding of Spoken Words with Applications in Spoken Content Retrieval"
+    },
+    {
+      "paper_id": 400,
+      "file_hash": "6b63a92ea619b2355254b71ed1a833870ff39329ea670d57f6707555641f88e5",
+      "title": "Iterative Policy Learning in End-to-End Trainable Task-Oriented Neural Dialog Models"
+    }
+  ],
+  "benchmark": {
+    "questions": 120,
+    "main": 96,
+    "complete": 87,
+    "coverage": 0.90625,
+    "reference_token_budget": 4096,
+    "routing_alias_fingerprint": "81f61db3966c5b732a79067c42163189b1b863189cbaf79c3b4f87e74d8cdca2",
+    "configuration_signature": "819cf8df77fa2daade7a241480c13c207f8c880fdcbe6f2e84ce0949a115309a"
+  }
+}

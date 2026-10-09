@@ -5,7 +5,8 @@ import pymupdf
 import pytest
 
 from paperanchor.library import PaperLibrary, PassageHit
-from paperanchor.semantic import HybridRetriever, RerankingRetriever, SemanticIndex
+from paperanchor.semantic import (FastEmbedProvider, HybridRetriever,
+                                   RerankingRetriever, SemanticIndex, build_retriever)
 from paperanchor.spaces import SpaceStore
 
 
@@ -19,6 +20,25 @@ class SmallEmbedding:
     def embed_query(self, text):
         return np.array([1.0, 0.0] if "注意力" in text
                         else [0.0, 1.0], dtype=np.float32)
+
+
+def test_repeated_scoped_query_reuses_embedding_without_sharing_mutable_vector() -> None:
+    class Model:
+        calls = 0
+
+        def query_embed(self, text):
+            self.calls += 1
+            yield np.array([len(text), 1.0], dtype=np.float32)
+
+    provider = FastEmbedProvider()
+    model = Model()
+    provider._model = model
+    first = provider.embed_query("same question")
+    first[0] = -1
+    assert provider.embed_query("same question")[0] == len("same question")
+    assert model.calls == 1
+    provider.embed_query("new question")
+    assert model.calls == 2
 
 
 def _pdf(path: Path, text: str) -> None:
@@ -134,3 +154,53 @@ def test_reranker_can_rescue_one_channel_evidence_before_fusion_truncation() -> 
     assert all(hit.passage_id != 1 for hit in initial.search("question", limit=20))
     hits = RerankingRetriever(initial, Reranker()).search("question", limit=5)
     assert hits[0].passage_id == 1
+
+
+def test_expanded_rerank_pool_recovers_deep_candidate_without_changing_default() -> None:
+    def passage(number: int) -> PassageHit:
+        return PassageHit(number, 1, Path("paper.pdf"), "Paper", 1,
+                          "gold" if number == 31 else f"distractor {number}",
+                          (0.0, 0.0, 1.0, 1.0), 0.0)
+
+    class Lexical:
+        def search(self, question, limit, *, space_id=None):
+            return tuple(passage(number) for number in range(1, 32))[:limit]
+
+    class EmptySemantic:
+        def count(self, model):
+            return 0
+
+    class Reranker:
+        def score(self, question, texts):
+            return [1.0 if text == "gold" else 0.0 for text in texts]
+
+    initial = HybridRetriever(Lexical(), EmptySemantic(), SmallEmbedding())
+    assert all(hit.passage_id != 31 for hit in
+               RerankingRetriever(initial, Reranker()).search("question", limit=5))
+    assert RerankingRetriever(initial, Reranker(), pool_factor=8).search(
+        "question", limit=5)[0].passage_id == 31
+
+
+def test_fusion_parameter_is_validated_and_changes_rank_weight() -> None:
+    with pytest.raises(ValueError, match="rrf_k"):
+        HybridRetriever(None, None, SmallEmbedding(), rrf_k=0)
+    with pytest.raises(ValueError, match="pool_factor"):
+        RerankingRetriever(None, None, pool_factor=100)
+
+    class Lexical:
+        def search(self, question, limit, *, space_id=None):
+            return tuple(PassageHit(n, 1, Path("paper.pdf"), "Paper", 1, str(n),
+                                    (0., 0., 1., 1.), 0.) for n in (1, 2))
+
+    class EmptySemantic:
+        def count(self, model):
+            return 1
+
+        def search(self, question, provider, *, limit, space_id=None):
+            return ()
+
+    default = HybridRetriever(Lexical(), EmptySemantic(), SmallEmbedding())
+    tuned = HybridRetriever(Lexical(), EmptySemantic(), SmallEmbedding(), rrf_k=10)
+    assert tuned.candidates("question", 2)[0].score > default.candidates("question", 2)[0].score
+    assert build_retriever(Lexical(), EmptySemantic(), SmallEmbedding(),
+                           rrf_k=10).rrf_k == 10

@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 from typing import Callable, Literal, Protocol
 
-from .library import PassageHit
+from .library import PassageHit, SourceSpan
 
 
 Generate = Callable[[str, str], str]
@@ -26,6 +26,13 @@ class Evidence:
     page_number: int
     text: str
     bbox: tuple[float, float, float, float]
+    source_spans: tuple[SourceSpan, ...] = ()
+    visual_region_id: int | None = None
+    source_hash: str | None = None
+    source_kind: str = "text"
+    source_label: str = ""
+    selection_method: str = ""
+    page_context_supplied: bool = False
 
 
 @dataclass(frozen=True)
@@ -54,13 +61,15 @@ def evidence_from_hits(hits: tuple[PassageHit, ...]) -> tuple[Evidence, ...]:
             page_number=hit.page_number,
             text=hit.text,
             bbox=hit.bbox,
+            source_spans=hit.source_spans or (SourceSpan(
+                hit.passage_id, hit.page_number, hit.bbox),),
         )
         for index, hit in enumerate(hits, start=1)
     )
 
 
 def answer_from_hits(question: str, hits: tuple[PassageHit, ...],
-                     generate: Generate) -> Answer:
+                     generate: Generate, *, system_prompt: str = SYSTEM_PROMPT) -> Answer:
     if not hits:
         return Answer(
             status="no_evidence",
@@ -74,7 +83,30 @@ def answer_from_hits(question: str, hits: tuple[PassageHit, ...],
         f"[{item.evidence_id}] {item.paper_title}, PDF page {item.page_number}:\n{item.text}"
         for item in evidence
     )
-    text = generate(SYSTEM_PROMPT, f"Question: {question}\n\nEvidence:\n{context}").strip()
+    return _answer_from_evidence(question, evidence, context, generate, system_prompt)
+
+
+def answer_from_context(question: str, context: dict, generate: Generate,
+                        *, system_prompt: str = SYSTEM_PROMPT) -> Answer:
+    """Use the assembled text verbatim and expose those exact citation excerpts."""
+    if not context["chunks"]:
+        return answer_from_hits(question, (), generate, system_prompt=system_prompt)
+    evidence = tuple(Evidence(
+        evidence_id=chunk["evidence_id"], passage_id=chunk["passage_id"],
+        paper_id=chunk["paper_id"], paper_path=Path(chunk["paper_path"]),
+        paper_title=chunk["paper_title"], page_number=chunk["page_number"],
+        text=chunk["text"], bbox=tuple(chunk["bbox"]),
+        source_spans=tuple(SourceSpan(
+            passage_id=span["passage_id"], page_number=span["page_number"],
+            bbox=tuple(span["bbox"])) for span in chunk.get("source_spans", ()))
+        or (SourceSpan(chunk["passage_id"], chunk["page_number"], tuple(chunk["bbox"])),),
+    ) for chunk in context["chunks"])
+    return _answer_from_evidence(question, evidence, context["text"], generate, system_prompt)
+
+
+def _answer_from_evidence(question: str, evidence: tuple[Evidence, ...], context: str,
+                          generate: Generate, system_prompt: str) -> Answer:
+    text = generate(system_prompt, f"Question: {question}\n\nEvidence:\n{context}").strip()
     cited_ids = tuple(dict.fromkeys(re.findall(r"\[(E\d+)\]", text)))
     available = {item.evidence_id for item in evidence}
     if any(citation not in available for citation in cited_ids):

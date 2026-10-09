@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { api, type Annotation, type Evidence, type PageGeometry, type Paper } from './api'
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react'
+import { api, type Annotation, type Evidence, type PageGeometry, type Paper, type VisualRegion } from './api'
 
 function Highlight({ box, geometry, kind }: {
-  box: [number, number, number, number], geometry: PageGeometry, kind: 'evidence' | 'note'
+  box: [number, number, number, number], geometry: PageGeometry,
+  kind: 'evidence' | 'note' | 'selection'
 }) {
   const [x0, y0, x1, y1] = box
   if (x1 <= x0 || y1 <= y0) return null
@@ -14,9 +15,12 @@ function Highlight({ box, geometry, kind }: {
   }} />
 }
 
-export default function Reader({ paper, page, onPage, focused, answerRevision }: {
+export default function Reader({ paper, page, onPage, focused, answerRevision,
+  selectedRegion, onSelectRegion }: {
   paper: Paper | null, page: number, onPage: (page: number) => void,
-  focused: Evidence | null, answerRevision: number
+  focused: Evidence | null, answerRevision: number,
+  selectedRegion: VisualRegion | null,
+  onSelectRegion: (region: VisualRegion | null) => void
 }) {
   const location = paper ? `${paper.id}:${page}` : 'empty'
   const [geometry, setGeometry] = useState<{
@@ -28,8 +32,46 @@ export default function Reader({ paper, page, onPage, focused, answerRevision }:
   const [noteText, setNoteText] = useState('')
   const [noteError, setNoteError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [selecting, setSelecting] = useState(false)
+  const [drag, setDrag] = useState<{start: [number, number], end: [number, number]} | null>(null)
+  const [interactionLocation, setInteractionLocation] = useState(location)
+  if (interactionLocation !== location) {
+    setInteractionLocation(location)
+    setNoteError('')
+    setDrag(null)
+    setSelecting(false)
+  }
   const currentGeometry = geometry.location === location ? geometry.value : null
   const currentNotes = notes.location === location ? notes.value : []
+  const noteLocation = useRef<string | null>(location)
+  const noteRevision = useRef(0)
+
+  useEffect(() => {
+    noteLocation.current = location
+    noteRevision.current += 1
+    return () => { noteLocation.current = null }
+  }, [location])
+
+  function pointerPosition(event: PointerEvent<HTMLDivElement>): [number, number] {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return [Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+      Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))]
+  }
+
+  function finishSelection(event: PointerEvent<HTMLDivElement>) {
+    if (!drag || !currentGeometry || !paper) return
+    const end = pointerPosition(event)
+    setDrag(null)
+    const x0 = Math.min(drag.start[0], end[0])
+    const y0 = Math.min(drag.start[1], end[1])
+    const x1 = Math.max(drag.start[0], end[0])
+    const y1 = Math.max(drag.start[1], end[1])
+    if (x1 - x0 < 0.02 || y1 - y0 < 0.02) return
+    onSelectRegion({ paper_id: paper.id, page_number: page,
+      bbox: [x0 * currentGeometry.width, y0 * currentGeometry.height,
+        x1 * currentGeometry.width, y1 * currentGeometry.height] })
+    setSelecting(false)
+  }
 
   useEffect(() => {
     if (!paper?.file_available) return
@@ -55,17 +97,24 @@ export default function Reader({ paper, page, onPage, focused, answerRevision }:
 
   async function saveNote(event: FormEvent) {
     event.preventDefault()
-    if (!paper?.file_available || !noteText.trim()) return
+    if (saving || !paper?.file_available || !noteText.trim()) return
+    const draft = noteText
+    const revision = noteRevision.current
     setSaving(true)
     try {
       const box = focused?.paper_id === paper.id && focused.page_number === page
         ? focused.bbox : [0, 0, 0, 0] as [number, number, number, number]
-      await api.addNote(paper.id, page, noteText.trim(), box)
-      setNotes({ location, value: await api.annotations(paper.id, page), error: '' })
-      setNoteText('')
+      await api.addNote(paper.id, page, draft.trim(), box)
+      if (noteLocation.current !== location || noteRevision.current !== revision) return
+      const value = await api.annotations(paper.id, page)
+      if (noteLocation.current !== location || noteRevision.current !== revision) return
+      setNotes({ location, value, error: '' })
+      setNoteText(current => current === draft ? '' : current)
       setNoteError('')
     } catch (error) {
-      setNoteError(error instanceof Error ? error.message : String(error))
+      if (noteLocation.current === location && noteRevision.current === revision) {
+        setNoteError(error instanceof Error ? error.message : String(error))
+      }
     } finally {
       setSaving(false)
     }
@@ -85,6 +134,11 @@ export default function Reader({ paper, page, onPage, focused, answerRevision }:
           onClick={() => onPage(page + 1)}>›</button>
         {paper?.file_available && <a href={`/api/papers/${paper.id}/file#page=${page}`}
           target="_blank" rel="noreferrer">PDF ↗</a>}
+        {paper?.file_available && <button type="button" aria-label="Select PDF region"
+          className={selecting ? 'active' : ''}
+          onClick={() => { setSelecting(value => !value); setDrag(null) }}>
+          {selecting ? 'Cancel selection' : 'Select region'}
+        </button>}
       </div>
     </div>
     <div className="reader-scroll">
@@ -93,11 +147,33 @@ export default function Reader({ paper, page, onPage, focused, answerRevision }:
       {paper?.file_available && !(geometry.location === location && geometry.error) && <div className="page-frame" key={location}>
         <img src={`/api/papers/${paper.id}/pages/${page}/image`}
           alt={`Page ${page} of ${paper.title}`} />
-        {currentGeometry && <div className="page-overlay">
+        {currentGeometry && <div className={`page-overlay ${selecting ? 'selecting' : ''}`}
+          onPointerDown={event => {
+            if (!selecting) return
+            event.currentTarget.setPointerCapture(event.pointerId)
+            const start = pointerPosition(event)
+            setDrag({ start, end: start })
+          }}
+          onPointerMove={event => {
+            if (drag) setDrag({ ...drag, end: pointerPosition(event) })
+          }}
+          onPointerUp={finishSelection}>
           {currentNotes.map(note => <Highlight key={note.id} box={note.bbox}
             geometry={currentGeometry} kind="note" />)}
-          {focused?.paper_id === paper.id && focused.page_number === page &&
-            <Highlight box={focused.bbox} geometry={currentGeometry} kind="evidence" />}
+          {focused?.paper_id === paper.id &&
+            (focused.source_spans?.length ? focused.source_spans : [focused])
+              .filter(span => span.page_number === page &&
+                span.bbox[2] > span.bbox[0] && span.bbox[3] > span.bbox[1])
+              .map((span, index) => <Highlight key={`${span.page_number}-${index}`}
+                box={span.bbox} geometry={currentGeometry} kind="evidence" />)}
+          {selectedRegion?.paper_id === paper.id && selectedRegion.page_number === page &&
+            <Highlight box={selectedRegion.bbox} geometry={currentGeometry} kind="selection" />}
+          {drag && <Highlight box={[
+            Math.min(drag.start[0], drag.end[0]) * currentGeometry.width,
+            Math.min(drag.start[1], drag.end[1]) * currentGeometry.height,
+            Math.max(drag.start[0], drag.end[0]) * currentGeometry.width,
+            Math.max(drag.start[1], drag.end[1]) * currentGeometry.height,
+          ]} geometry={currentGeometry} kind="selection" />}
         </div>}
       </div>}
       {geometry.location === location && geometry.error && <p className="error">{geometry.error}</p>}

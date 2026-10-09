@@ -1,4 +1,5 @@
 from pathlib import Path
+import sqlite3
 
 import pymupdf
 import pytest
@@ -51,3 +52,28 @@ def test_new_papers_remain_visible_in_all_papers(tmp_path: Path) -> None:
 
     assert spaces.get_space(1).paper_count == 1
     assert library.list_papers(space_id=1)[0].id == indexed.paper_id
+
+
+def test_available_papers_pages_and_bulk_add_large_library(tmp_path: Path) -> None:
+    database = tmp_path / "library.sqlite3"
+    PaperLibrary(database)
+    spaces = SpaceStore(database)
+    reading_list = spaces.create_space("Large reading list")
+    with sqlite3.connect(database) as connection:
+        connection.executemany(
+            """INSERT INTO papers (file_path, file_hash, title, page_count, indexed_at)
+               VALUES (?, ?, ?, 1, '2026-01-01')""",
+            ((f"/test/{index}.pdf", str(index), f"Paper {index:04d}")
+             for index in range(1200)),
+        )
+
+    first, total = spaces.available_papers(reading_list.id, "Paper", limit=50)
+    last, last_total = spaces.available_papers(reading_list.id, "Paper", limit=50, offset=1150)
+    assert total == last_total == 1200
+    assert len(first) == len(last) == 50
+    assert first[0]["title"] == "Paper 0000"
+    assert last[-1]["title"] == "Paper 1199"
+    assert spaces.add_papers(reading_list.id, query="Paper") == 1200
+    assert spaces.available_papers(reading_list.id)[1] == 0
+    assert spaces.get_space(reading_list.id).paper_count == 1200
+    assert spaces.available_papers(1, "%")[1] == 0

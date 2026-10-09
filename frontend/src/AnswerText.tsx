@@ -11,7 +11,7 @@ export default function AnswerText({ answer, onEvidence }: {
       ? <button className="citation" key={index} onClick={() => onEvidence(item)}>{part}</button>
       : <span key={index}>{part}</span>
   })
-  return <article className="answer"><div className="answer-status">{answer.status.replaceAll('_', ' ')}</div>
+  return <article className="answer"><div className={'answer-status' + (answer.status === 'answered' ? ' answered' : '')}>{answer.status.replaceAll('_', ' ')}</div>
     <div className="answer-basis">{answer.basis === 'papers' ? 'Based on your papers'
       : answer.basis === 'model' ? 'Model knowledge · not verified by your papers'
         : 'No supported answer from your papers'}</div>

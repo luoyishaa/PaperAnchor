@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pymupdf
+import numpy as np
 from fastapi.testclient import TestClient
 
 from paperanchor import cli
@@ -22,17 +23,25 @@ def _model(system: str, _prompt: str) -> str:
 
 
 def test_cli_ask_uses_web_evidence_workflow(tmp_path, monkeypatch, capsys) -> None:
+    class Embedding:
+        name = "test-cli-embedding"
+        def embed_passages(self, texts):
+            return [np.array([1.0, 0.0], dtype=np.float32) for _ in texts]
+        def embed_query(self, _text):
+            return np.array([1.0, 0.0], dtype=np.float32)
+
     database = tmp_path / "library.sqlite3"
     paper = tmp_path / "sample.pdf"
     _pdf(paper)
     monkeypatch.setattr(cli, "generate_with_config", _model)
+    monkeypatch.setattr(cli, "FastEmbedProvider", lambda **_: Embedding())
     assert cli.main(["--db", str(database), "index", str(paper)]) == 0
     capsys.readouterr()
 
     question = "What does retrieval augmented generation combine?"
     assert cli.main(["--db", str(database), "ask", question]) == 0
     output = capsys.readouterr().out
-    with TestClient(create_app(database, generate=_model)) as client:
+    with TestClient(create_app(database, generate=_model, embedding_provider=Embedding())) as client:
         web_answer = client.post("/api/ask", json={"question": question}).json()
 
     assert "Status: answered | Basis: papers" in output

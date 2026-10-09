@@ -7,7 +7,9 @@ from pathlib import Path
 import re
 import sqlite3
 
+from .database import Database
 from .pdf import parse_pdf
+from .visual_index import VisualStore
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,14 @@ class PassageHit:
     text: str
     bbox: tuple[float, float, float, float]
     score: float
+    source_spans: tuple["SourceSpan", ...] = ()
+
+
+@dataclass(frozen=True)
+class SourceSpan:
+    passage_id: int
+    page_number: int
+    bbox: tuple[float, float, float, float]
 
 
 @dataclass(frozen=True)
@@ -55,6 +65,16 @@ _STOP_WORDS = frozenset(
 )
 
 
+def _overview_excerpt(text: str, max_chars: int = 2400) -> str:
+    """Keep ordinary abstracts intact and mark any context-budget cutoff."""
+    if len(text) <= max_chars:
+        return text
+    end = max(text.rfind(mark, max_chars - 500, max_chars)
+              for mark in (".", "?", "!", "。", "？", "！"))
+    prefix = text[:end + 1] if end >= max_chars - 500 else text[:max_chars].rstrip()
+    return prefix + " [Excerpt truncated; open the PDF for continuation.]"
+
+
 def _search_expression(question: str) -> str:
     terms = [
         term
@@ -68,9 +88,8 @@ def _search_expression(question: str) -> str:
 class PaperLibrary:
     def __init__(self, database_path: Path):
         self.database_path = database_path
-        database_path.parent.mkdir(parents=True, exist_ok=True)
-        connection = self._connect()
-        try:
+        self.database = Database(database_path)
+        with self.database.connect() as connection:
             connection.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS papers (
@@ -104,15 +123,11 @@ class PaperLibrary:
                 );
                 """
             )
-        finally:
-            connection.close()
+
+        self.visuals = VisualStore(self)
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.database_path)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA busy_timeout = 5000")
-        return connection
+        return self.database.connect_only()
 
     def index_pdf(self, pdf_path: Path, *, display_name: str | None = None) -> IndexResult:
         path = pdf_path.resolve(strict=True)
@@ -138,6 +153,8 @@ class PaperLibrary:
                 return IndexResult(existing["id"], count, changed=False)
 
             parsed = parse_pdf(path)
+            if sha256(path.read_bytes()).hexdigest() != file_hash:
+                raise ValueError("PDF changed during parsing. Import the stable file again.")
             title = display_name.strip() if display_name and parsed.title == path.stem else parsed.title
             with connection:
                 if existing:
@@ -190,12 +207,15 @@ class PaperLibrary:
                         "INSERT INTO passage_search (rowid, text) VALUES (?, ?)",
                         (cursor.lastrowid, passage.text),
                     )
+                # Source text and visual regions become visible together.
+                self.visuals.replace_regions(connection, paper_id, file_hash, parsed.visuals)
             return IndexResult(paper_id, len(parsed.passages), changed=True)
         finally:
             connection.close()
 
     def search(self, question: str, limit: int = 5, *,
-               space_id: int | None = None) -> tuple[PassageHit, ...]:
+               space_id: int | None = None,
+               paper_id: int | None = None) -> tuple[PassageHit, ...]:
         if limit < 1:
             raise ValueError("limit must be at least 1")
         expression = _search_expression(question)
@@ -207,6 +227,7 @@ class PaperLibrary:
                 "JOIN space_papers AS sp ON sp.paper_id = d.id AND sp.space_id = ?"
                 if space_id is not None else ""
             )
+            paper_filter = "AND p.paper_id = ?" if paper_id is not None else ""
             rows = connection.execute(
                 f"""
                 SELECT p.id, p.paper_id, p.page_number, p.text, p.x0, p.y0, p.x1, p.y1,
@@ -215,12 +236,13 @@ class PaperLibrary:
                 JOIN passages AS p ON p.id = passage_search.rowid
                 JOIN papers AS d ON d.id = p.paper_id
                 {membership}
-                WHERE passage_search MATCH ?
+                WHERE passage_search MATCH ? {paper_filter}
                 ORDER BY score
                 LIMIT ?
                 """,
-                ((space_id, expression, limit) if space_id is not None
-                 else (expression, limit)),
+                ((space_id,) if space_id is not None else ())
+                + (expression,)
+                + ((paper_id,) if paper_id is not None else ()) + (limit,),
             ).fetchall()
             return tuple(
                 PassageHit(
@@ -265,6 +287,62 @@ class PaperLibrary:
                    WHERE d.id = ? GROUP BY d.id""", (paper_id,)
             ).fetchone()
             return self._paper_from_row(row) if row else None
+        finally:
+            connection.close()
+
+    def delete_paper(self, paper_id: int) -> Path | None:
+        """Remove a paper and every database record that refers to it.
+
+        Return its path so the caller can decide whether it owns the PDF file.
+        """
+        connection = self._connect()
+        try:
+            with connection:
+                row = connection.execute(
+                    "SELECT file_path FROM papers WHERE id=?", (paper_id,)
+                ).fetchone()
+                if row is None:
+                    return None
+                connection.execute(
+                    "DELETE FROM passage_search WHERE rowid IN "
+                    "(SELECT id FROM passages WHERE paper_id=?)", (paper_id,)
+                )
+                connection.execute("DELETE FROM papers WHERE id=?", (paper_id,))
+            return Path(row["file_path"])
+        finally:
+            connection.close()
+
+    def representative_passages(self, paper_ids: tuple[int, ...]) -> tuple[PassageHit, ...]:
+        """Select one substantial opening passage per paper for a collection overview."""
+        connection = self._connect()
+        try:
+            selected = []
+            for paper_id in paper_ids:
+                rows = connection.execute(
+                    """SELECT p.*, d.file_path, d.title FROM passages AS p
+                       JOIN papers AS d ON d.id=p.paper_id
+                       WHERE p.paper_id=? AND p.page_number<=2
+                       ORDER BY p.page_number, p.block_number""",
+                    (paper_id,),
+                ).fetchall()
+                if not rows:
+                    continue
+                # Abstract-bearing blocks usually state the contribution. When
+                # parsing splits the heading, prefer the earliest substantial text.
+                row = max(rows, key=lambda item: (
+                    int("abstract" in item["text"][:80].casefold()
+                        and len(item["text"]) >= 200),
+                    int(len(item["text"]) >= 300),
+                    -item["page_number"], -item["block_number"],
+                    min(len(item["text"]), 1600),
+                ))
+                selected.append(PassageHit(
+                    passage_id=row["id"], paper_id=row["paper_id"],
+                    paper_path=Path(row["file_path"]), paper_title=row["title"],
+                    page_number=row["page_number"], text=_overview_excerpt(row["text"]),
+                    bbox=(row["x0"], row["y0"], row["x1"], row["y1"]), score=0.0,
+                ))
+            return tuple(selected)
         finally:
             connection.close()
 

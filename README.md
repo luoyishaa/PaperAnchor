@@ -58,6 +58,14 @@ The remaining 24 questions are unanswerable auxiliary cases. Timings cover retri
 
 See [evaluation details](docs/evaluation.md), [per-question results](evals/results/qasper120.json), and the [benchmark guide](evals/README.md).
 
+A separate **question-only LitQA2 evaluation** uses no injected paper title or
+source filter. On 95 questions with obtainable full text in a 93-paper local
+corpus, Fast retrieval returned the annotated source for all 95 questions, and
+local Qwen3-8B answered 77 correctly (**81.05%**), with 7 wrong choices and 11
+abstentions. This is an accessible-subset, XML-text evaluation; 104 of the 199
+public questions lacked obtainable source text in this run. It does not evaluate
+PDF parsing or web-scale search. See the [protocol and results](docs/litqa2-evaluation.md).
+
 ## Development
 
 The backend uses FastAPI, SQLite FTS5, PyMuPDF, and FastEmbed. The frontend uses React and TypeScript. See [architecture](docs/architecture.md) for the retrieval and citation pipeline.

@@ -1,5 +1,14 @@
 # Evaluation
 
+Two task families are available:
+
+- **QASPER:** title-hinted, paper-grounded evidence retrieval, described below.
+- **LitQA2:** original-question-only retrieval and multiple-choice answering over
+  an isolated full-text corpus. The first run covers 95 available-source questions
+  and 93 papers, with 81.05% answer accuracy. See the
+  [protocol, limitations and reproduction commands](../docs/litqa2-evaluation.md)
+  and [per-question results](results/litqa2-question-only.json).
+
 PaperAnchor evaluates retrieval on 120 QASPER questions over a 400-paper PDF
 library. The question and paper title are supplied separately. Of the 120 cases,
 96 have annotated evidence and 24 are unanswerable auxiliary cases. Every profile

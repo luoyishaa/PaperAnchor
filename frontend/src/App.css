@@ -331,6 +331,7 @@
 .setting-option input { margin: 2px 0 0; }
 .search-profile-option { display: grid; gap: 6px; margin: 12px 0; color: #5c6b60; font-size: 11px; }
 .search-profile-option select { width: 100%; padding: 7px 8px; border: 1px solid #d7ddd8; border-radius: 6px; background: white; color: inherit; font: inherit; }
+.profile-description { display: block; margin-top: -6px; color: #7b877e; font-size: 10px; line-height: 1.45; }
 .profile-unavailable { display: block; color: #826841; font-size: 11px; line-height: 1.45; }
 .semantic-state { margin-top: 19px; padding-top: 13px; border-top: 1px solid var(--line); }
 .semantic-state strong, .semantic-state small { display: block; }

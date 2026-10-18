@@ -7,6 +7,12 @@ import DiscoveryPanel from './DiscoveryPanel'
 import { loadRetrievalProfile, saveRetrievalProfile } from './retrievalPreferences'
 import './App.css'
 
+const retrievalProfileDescriptions: Partial<Record<RetrievalProfile, string>> = {
+  evidence_minilm: 'Fastest response · MiniLM reranking',
+  evidence_v2: 'Balanced speed and coverage · BGE reranking',
+  evidence_optimized: 'Highest measured coverage · MiniLM + BGE fusion',
+}
+
 function App() {
   const [spaces, setSpaces] = useState<ResearchSpace[]>([])
   const [spacesError, setSpacesError] = useState('')
@@ -739,12 +745,16 @@ function App() {
             setRetrievalProfile(next)
             saveRetrievalProfile(next)
           }}>
-            <option value="evidence_minilm">Fast (MiniLM)</option>
-            <option value="evidence_v2">Quality (BGE)</option>
-            {optimizedAvailable && <option value="evidence_optimized">Optimized</option>}
+            <option value="evidence_minilm">Fast · MiniLM</option>
+            <option value="evidence_v2">Balanced · BGE</option>
+            {optimizedAvailable && <option value="evidence_optimized">Quality · MiniLM + BGE</option>}
             <option value="legacy">Standard</option>
           </select>
         </label>
+        {retrievalProfileDescriptions[effectiveRetrievalProfile] &&
+          <small className="profile-description">
+            {retrievalProfileDescriptions[effectiveRetrievalProfile]}
+          </small>}
         {retrievalProfile === 'evidence_optimized' && semantic && !optimizedAvailable &&
           <small className="profile-unavailable">Optimized search is unavailable. Using Fast (MiniLM).
             {semantic.retrieval_profile_errors?.evidence_optimized &&

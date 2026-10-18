@@ -1,0 +1,161 @@
+{
+  "questions_total": 199,
+  "initial_covered": 95,
+  "expanded_covered": 192,
+  "at_least_one_source": 194,
+  "source_entries": 191,
+  "ready_source_entries": 185,
+  "manifest_sha256": "89875f755315454697d4fb560fda76ba4aac1867e447487dccb9979c73f6adba",
+  "providers": {
+    "bethgelab bioRxiv parsed full text": 34,
+    "Europe PMC XML": 93,
+    "PMC AWS": 30,
+    "Repository PDF": 24,
+    "PMC article HTML": 3,
+    "Repository PDF OCR": 1
+  },
+  "missing_questions": [
+    {
+      "id": "1e5f5199-84f4-4133-ab87-2372fa6ca722",
+      "sources": [
+        "https://doi.org/10.1261/rna.034181.112"
+      ]
+    },
+    {
+      "id": "0bac8974-554c-439a-a9a2-22fa509c8d5d",
+      "sources": [
+        "https://doi.org/10.1080/14712598.2019.1685489"
+      ]
+    },
+    {
+      "id": "58b39fab-337b-452d-b74f-84f9a188ce88",
+      "sources": [
+        "https://doi.org/10.1016/j.febslet.2014.11.036"
+      ]
+    },
+    {
+      "id": "cff68274-4bbe-4fa0-a181-36a9af3cc0f1",
+      "sources": [
+        "https://doi.org/10.1016/j.bpj.2021.11.1119"
+      ]
+    },
+    {
+      "id": "2c262f91-52b6-421d-8341-8748f923459e",
+      "sources": [
+        "https://doi.org/10.1016/j.bpj.2021.11.1119"
+      ]
+    },
+    {
+      "id": "5c808548-92c4-4ae7-990c-e2df81e3c2ae",
+      "sources": [
+        "https://doi.org/10.1242/jcs.115.4.827"
+      ]
+    },
+    {
+      "id": "b8ec372b-ae29-473e-96bc-86ff1ead24ea",
+      "sources": [
+        "https://doi.org/10.1002/(sici)1097-0177(200006)218:2<235::aid-dvdy2>3.0.co;2-g"
+      ]
+    }
+  ],
+  "verified": "All ready file hashes and raw hashes verified; all article wrappers parse into nonempty titled article blocks",
+  "limitations": [
+    "Archive PDF extraction can omit text, layout and figures; exact bioRxiv revision is not consistently encoded.",
+    "Coverage is document availability, not evidence recall or answer accuracy."
+  ],
+  "evaluation_status": "Expanded corpus not yet indexed or evaluated; previous 95-question scores unchanged",
+  "as_of": "2026-10-09",
+  "missing_sources": [
+    {
+      "doi": "10.1016/j.bpj.2021.11.1119",
+      "title": "Deciphering the molecular organization of Get pathway chaperones through native top-down dissociation of multi-protein complexes",
+      "affected_question_ids": [
+        "cff68274-4bbe-4fa0-a181-36a9af3cc0f1",
+        "2c262f91-52b6-421d-8341-8748f923459e"
+      ],
+      "latest_attempts": [
+        {
+          "provider": "PMC AWS",
+          "error": "No matching available article version"
+        }
+      ]
+    },
+    {
+      "doi": "10.1002/(sici)1097-0177(200006)218:2<235::aid-dvdy2>3.0.co;2-g",
+      "title": "The tenascin family of ECM glycoproteins: Structure, function, and regulation during embryonic development and tissue remodeling",
+      "affected_question_ids": [
+        "b8ec372b-ae29-473e-96bc-86ff1ead24ea"
+      ],
+      "latest_attempts": [
+        {
+          "provider": "PMC AWS",
+          "error": "No matching available article version"
+        }
+      ]
+    },
+    {
+      "doi": "10.1016/j.febslet.2014.11.036",
+      "title": "Roles and regulation of phospholipid scramblases",
+      "affected_question_ids": [
+        "58b39fab-337b-452d-b74f-84f9a188ce88"
+      ],
+      "latest_attempts": [
+        {
+          "provider": "PMC AWS",
+          "error": "No matching available article version"
+        },
+        {
+          "url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1016/j.febslet.2014.11.036",
+          "error": "Client error '403 Forbidden' for url 'https://onlinelibrary.wiley.com/doi/pdfdirect/10.1016/j.febslet.2014.11.036'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+        }
+      ]
+    },
+    {
+      "doi": "10.1080/14712598.2019.1685489",
+      "title": "Bempegaldesleukin (NKTR-214): a CD-122-biased IL-2 receptor agonist for cancer immunotherapy",
+      "affected_question_ids": [
+        "0bac8974-554c-439a-a9a2-22fa509c8d5d"
+      ],
+      "latest_attempts": [
+        {
+          "provider": "PMC AWS",
+          "error": "No matching available article version"
+        },
+        {
+          "url": "https://www.tandfonline.com/doi/pdf/10.1080/14712598.2019.1685489?needAccess=true&role=button",
+          "error": "Client error '403 Forbidden' for url 'https://www.tandfonline.com/doi/pdf/10.1080/14712598.2019.1685489?needAccess=true&role=button'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+        }
+      ]
+    },
+    {
+      "doi": "10.1242/jcs.115.4.827",
+      "title": "Identification and characterization of a novel human plant pathogenesis-related protein that localizes to lipid-enriched microdomains in the Golgi complex",
+      "affected_question_ids": [
+        "5c808548-92c4-4ae7-990c-e2df81e3c2ae"
+      ],
+      "latest_attempts": [
+        {
+          "provider": "PMC AWS",
+          "error": "No matching available article version"
+        }
+      ]
+    },
+    {
+      "doi": "10.1261/rna.034181.112",
+      "title": "The multiple Tudor domain-containing protein TDRD1 is a molecular scaffold for mouse Piwi proteins and piRNA biogenesis factors",
+      "affected_question_ids": [
+        "1e5f5199-84f4-4133-ab87-2372fa6ca722"
+      ],
+      "latest_attempts": [
+        {
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3479395/",
+          "error": "DOI mismatch"
+        },
+        {
+          "url": "https://rnajournal.cshlp.org/content/18/11/2056.full.pdf",
+          "error": "Client error '403 Forbidden' for url 'https://rnajournal.cshlp.org/content/18/11/2056.full.pdf'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+        }
+      ]
+    }
+  ]
+}
